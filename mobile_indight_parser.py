@@ -17,7 +17,7 @@ class DlTxDelayAnalyzer():
         self.firstTime = PDCP_packets[-1].time_stamp
         for PDCP_packet in PDCP_packets:
             d = self.PDCP_delay(PDCP_packet)
-            print(str(d) + 'frame')
+            print('delay: ' + str(d) + ' frame')
             self.txdelay += d
         return self.txdelay / self.totatPackets
 
@@ -31,9 +31,11 @@ class DlTxDelayAnalyzer():
         if not firstPHY:
             self.totatPackets -= 1
             return 0
+        
+        result = PDCP_packet.time_stamp - firstPHY.time_stamp
         del firstPHY
-        return PDCP_packet.time_stamp - firstPHY.time_stamp
-
+        return result
+        
     def first_RLC_of_PDCP(self, PDCP_time_stamp):
         i = 0
         while self.RLC_packets[i].time_stamp > PDCP_time_stamp:
