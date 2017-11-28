@@ -188,16 +188,18 @@ class MobileInsightXmlToListConverter(object):
                     datas = subpacket["RLCDL PDUs"]
                     prev_stamp = None
                     for data in datas:
-                        if not global_fn:
+                        # only collect the actual data instead of control data
+                        if data["PDU TYPE"] == "RLCDL DATA":
+                            if not global_fn:
+                                global_fn = int(data["sys_fn"])
+                            elif global_fn > int(data["sys_fn"]):
+                                counter += 1
                             global_fn = int(data["sys_fn"])
-                        elif global_fn > int(data["sys_fn"]):
-                            counter += 1
-                        global_fn = int(data["sys_fn"])
-                        time_stamp = float(
-                            '.'.join((data["sys_fn"], data["sub_fn"])))
-                        time_stamp += counter * 1024
-                        current_packet = AtomPacket(data, time_stamp, "RLC")
-                        RLC_packets.append(current_packet)
+                            time_stamp = float(
+                                '.'.join((data["sys_fn"], data["sub_fn"])))
+                            time_stamp += counter * 1024
+                            current_packet = AtomPacket(data, time_stamp, "RLC")
+                            RLC_packets.append(current_packet)
             elif "type_id" in new_dict and new_dict[
                 "type_id"] == "LTE_PHY_PDSCH_Stat_Indication":
                 records = new_dict["Records"]
@@ -221,12 +223,10 @@ class MobileInsightXmlToListConverter(object):
                     new_dict["timestamp"], new_dict["Version"],
                     new_dict["log_msg_len"]))
 
-        sorted(RLC_packets, key=lambda packet: packet.time_stamp,
-               reverse=True)
-        # sorted(PDCP_packets, key=lambda packet: packet.time_stamp,
-        #        reverse=True)
-        # sorted(PHY_packets, key=lambda packet: packet.time_stamp,
-        #        reverse=True)
+        RLC_packets.sort(key=lambda packet: packet.time_stamp, reverse=True)
+        PDCP_packets.sort(key=lambda packet: packet.time_stamp, reverse=True)
+        PHY_packets.sort(key=lambda packet: packet.time_stamp, reverse=True)
+
         return RLC_packets, PDCP_packets, PHY_packets
 
 
