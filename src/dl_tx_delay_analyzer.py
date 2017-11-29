@@ -1,8 +1,7 @@
 #!/usr/bin/env python3
-# Author: Zhen Feng
+# author: Jiuru Shao
 
-from collections import OrderedDict
-import xml.etree.ElementTree as ET
+import os
 from src.log_parser import MobileInsightXmlToListConverter
 
 class DlTxDelayAnalyzer(object):
@@ -60,7 +59,8 @@ class DlTxDelayAnalyzer(object):
 
 
 def main():
-    RLC_packets, PDCP_packets, PHY_packets = MobileInsightXmlToListConverter.convert_xml_to_list("logs/cr_dl_full.txt")
+
+    RLC_packets, PDCP_packets, PHY_packets = MobileInsightXmlToListConverter.convert_xml_to_list("../logs/cr_dl_unit.txt")
 
     analyzer = DlTxDelayAnalyzer()
 
