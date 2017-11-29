@@ -3,47 +3,27 @@
 
 import os
 from src.log_parser import MobileInsightXmlToListConverter
+from functools import reduce
+from typing import List
 
 class DlTxDelayAnalyzer(object):
     def __init__(self):
         self.txdelay = 0.0
-        self.totatPackets = 0
+        self.totalPackets = 0
         self.PDCP_packets = []
         self.RLC_packets = []   # sorted by descending timestamp
         self.MAC_packets = []
         self.PHY_packets = []
 
     def analyze(self):
-        self.firstTime = self.PDCP_packets[-1].time_stamp
-        for PDCP_packet in self.PDCP_packets:
-            d = self.PDCP_delay(PDCP_packet)
-            print('delay: ' + str(d) + ' frame')
-            self.txdelay += d
-        return self.txdelay / self.totatPackets
-
-    def PDCP_delay(self, PDCP_packet):
-        firstRLC = self.first_RLC_of_PDCP(PDCP_packet.time_stamp)
-        self.totatPackets = len(self.PDCP_packets)
-        if not firstRLC:
-            self.totatPackets -= 1
-            return 0
-        firstPHY = self.first_PHY_of_RLC(firstRLC.time_stamp)
-        if not firstPHY:
-            self.totatPackets -= 1
-            return 0
-        
-        result = PDCP_packet.time_stamp - firstPHY.time_stamp
-        del firstPHY
-        return result
-        
-    def first_RLC_of_PDCP(self, PDCP_time_stamp):
-        i = 0
-        while self.RLC_packets[i].time_stamp > PDCP_time_stamp:
-            i += 1
-        for RLC_packet in self.RLC_packets[i:]:
-            if RLC_packet.find_value("FI")[0] == "0":
-                return RLC_packet
-        return None
+        mergedRLCPackets = self.mergeRLC()
+        for t in mergedRLCPackets:
+            PHY_packet = self.first_PHY_of_RLC(t)
+            if not PHY_packet:
+                print("Can't find PDCP for RLC at " + t)
+            else:
+                self.txdelay += t - PHY_packet.time_stamp
+                self.totalPackets += 1
 
     def first_PHY_of_RLC(self, RLC_time_stamp):
         i = 0
@@ -57,6 +37,18 @@ class DlTxDelayAnalyzer(object):
                 return PHY_packet
         return None
 
+    def mergeTwoRLC(self, processed, nextRLC) -> List:
+        # merge 2 RLC packet, input to reduce()
+        n = nextRLC.find_value("LI") + 1 - nextRLC.find_value("FI")[1]  # number of complete PDCP packets
+        if not processed:
+            return [nextRLC.time_stamp] * n
+        else:
+            assert processed[-1].find_value("FI")[1] == nextRLC.find_value("FI")[0]
+            return processed + [nextRLC.time_stamp] * n
+
+    def mergeRLC(self) -> List:
+        return reduce(self.mergeTwoRLC(), self.RLC_packets)
+
 
 def main():
 
@@ -69,27 +61,6 @@ def main():
     analyzer.RLC_packets = RLC_packets  # sorted by descending timestamp
     analyzer.PHY_packets = PHY_packets
     analyzer.analyze()
-
-
-# for packet in RLC_packets:
-#     print(packet)
-#
-# for packet in PHY_packets:
-#     print(packet)
-#
-# for packet in PDCP_packets:
-#     print(packet)
-
-# result_list = []
-# for child in root:
-#     new_dict = OrderedDict()
-#     parse_xml(child, new_dict)
-#     result_list.append(new_dict)
-#
-#
-# for element in result_list:
-#     print_dict(element, 0)
-
 
 if __name__ == '__main__':
     main()
