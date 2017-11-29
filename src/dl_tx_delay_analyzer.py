@@ -3,47 +3,27 @@
 
 import os
 from src.log_parser import MobileInsightXmlToListConverter
+from functools import reduce
+from typing import List
 
 class DlTxDelayAnalyzer(object):
     def __init__(self):
         self.txdelay = 0.0
-        self.totatPackets = 0
+        self.totalPackets = 0
         self.PDCP_packets = []
         self.RLC_packets = []   # sorted by descending timestamp
         self.MAC_packets = []
         self.PHY_packets = []
 
     def analyze(self):
-        self.firstTime = self.PDCP_packets[-1].time_stamp
-        for PDCP_packet in self.PDCP_packets:
-            d = self.PDCP_delay(PDCP_packet)
-            print('delay: ' + str(d) + ' frame')
-            self.txdelay += d
-        return self.txdelay / self.totatPackets
-
-    def PDCP_delay(self, PDCP_packet):
-        firstRLC = self.first_RLC_of_PDCP(PDCP_packet.time_stamp)
-        self.totatPackets = len(self.PDCP_packets)
-        if not firstRLC:
-            self.totatPackets -= 1
-            return 0
-        firstPHY = self.first_PHY_of_RLC(firstRLC.time_stamp)
-        if not firstPHY:
-            self.totatPackets -= 1
-            return 0
-        
-        result = PDCP_packet.time_stamp - firstPHY.time_stamp
-        del firstPHY
-        return result
-        
-    def first_RLC_of_PDCP(self, PDCP_time_stamp):
-        i = 0
-        while self.RLC_packets[i].time_stamp > PDCP_time_stamp:
-            i += 1
-        for RLC_packet in self.RLC_packets[i:]:
-            if RLC_packet.find_value("FI")[0] == "0":
-                return RLC_packet
-        return None
+        mergedRLCPackets = self.mergeRLC()
+        for t in mergedRLCPackets:
+            PHY_packet = self.first_PHY_of_RLC(t)
+            if not PHY_packet:
+                print("Can't find PDCP for RLC at " + t)
+            else:
+                self.txdelay += t - PHY_packet.time_stamp
+                self.totalPackets += 1
 
     def first_PHY_of_RLC(self, RLC_time_stamp):
         i = 0
@@ -57,39 +37,51 @@ class DlTxDelayAnalyzer(object):
                 return PHY_packet
         return None
 
+    def mergeTwoRLC(self, processed, nextRLC) -> List:
+        # merge 2 RLC packet, input to reduce()
+        n = nextRLC.find_value("LI") + 1 - nextRLC.find_value("FI")[1]  # number of complete PDCP packets
+        if not processed:
+            return [nextRLC.time_stamp] * n
+        else:
+            assert processed[-1].find_value("FI")[1] == nextRLC.find_value("FI")[0]
+            return processed + [nextRLC.time_stamp] * n
+
+    def mergeRLC(self) -> List:
+        return reduce(self.mergeTwoRLC(), self.RLC_packets)
+
 
 def main():
 
-    RLC_packets, PDCP_packets, PHY_packets = MobileInsightXmlToListConverter.convert_xml_to_list("../logs/cr_dl_unit.txt")
+    # RLC_time_stamps, RLC_packets, \
+    # PDCP_time_stamps, PDCP_packets, \
+    # PHY_time_stamps, PHY_packets \
+    #     = MobileInsightXmlToListConverter.convert_dl_xml_to_list("../logs/cr_dl_unit.txt")
 
-    analyzer = DlTxDelayAnalyzer()
+    RLC_time_stamps, RLC_packets, PDCP_time_stamps, PDCP_packets, \
+    PHY_PUSCH_time_stamps, PHY_PUSCH_packets, PHY_PDCCH_time_stamps, \
+    PHY_PDCCH_packets, MAC_time_stamps, MAC_packets \
+        = MobileInsightXmlToListConverter.convert_ul_xml_to_list("../logs/cr_ul_unit.txt", last_mac_fn= 8564, cur_mac_fn= 8564)
 
-    print(len(PDCP_packets))
-    analyzer.PDCP_packets = PDCP_packets
-    analyzer.RLC_packets = RLC_packets  # sorted by descending timestamp
-    analyzer.PHY_packets = PHY_packets
-    analyzer.analyze()
+    print(RLC_packets)
+    print(PDCP_packets)
+    print(PHY_PUSCH_packets)
+    print(PHY_PDCCH_packets)
+    print(MAC_packets)
 
+    # how to get the number of li in a single RLC packets
+    # number_of_li = packet.information_dict.get("NUMBER OF LI", None)
+    # return value if it has li otherwise None
 
-# for packet in RLC_packets:
-#     print(packet)
-#
-# for packet in PHY_packets:
-#     print(packet)
-#
-# for packet in PDCP_packets:
-#     print(packet)
+    # analyzer = DlTxDelayAnalyzer()
 
-# result_list = []
-# for child in root:
-#     new_dict = OrderedDict()
-#     parse_xml(child, new_dict)
-#     result_list.append(new_dict)
-#
-#
-# for element in result_list:
-#     print_dict(element, 0)
+    # return-signature of convert_dl_xml_to_list changed, please change the
+    # logic accordingly
 
+    # print(len(PDCP_packets))
+    # analyzer.PDCP_packets = PDCP_packets
+    # analyzer.RLC_packets = RLC_packets  # sorted by descending timestamp
+    # analyzer.PHY_packets = PHY_packets
+    # analyzer.analyze()
 
 if __name__ == '__main__':
     main()
