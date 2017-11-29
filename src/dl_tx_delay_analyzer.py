@@ -52,15 +52,31 @@ class DlTxDelayAnalyzer(object):
 
 def main():
 
-    RLC_packets, PDCP_packets, PHY_packets = MobileInsightXmlToListConverter.convert_xml_to_list("../logs/cr_dl_unit.txt")
+    RLC_time_stamps, RLC_packets, \
+    PDCP_time_stamps, PDCP_packets, \
+    PHY_time_stamps, PHY_packets \
+        = MobileInsightXmlToListConverter.convert_dl_xml_to_list("../logs/cr_dl_unit.txt")
+
+    print(RLC_packets)
+    print(PDCP_packets)
+    print(PHY_packets)
+
+    # how to get the number of li in a single RLC packets
+    # number_of_li = packet.information_dict.get("NUMBER OF LI", None)
+    # return value if it has li otherwise None
+
+
 
     analyzer = DlTxDelayAnalyzer()
 
-    print(len(PDCP_packets))
-    analyzer.PDCP_packets = PDCP_packets
-    analyzer.RLC_packets = RLC_packets  # sorted by descending timestamp
-    analyzer.PHY_packets = PHY_packets
-    analyzer.analyze()
+    # return-signature of convert_dl_xml_to_list changed, please change the
+    # logic accordingly
+
+    # print(len(PDCP_packets))
+    # analyzer.PDCP_packets = PDCP_packets
+    # analyzer.RLC_packets = RLC_packets  # sorted by descending timestamp
+    # analyzer.PHY_packets = PHY_packets
+    # analyzer.analyze()
 
 if __name__ == '__main__':
     main()
