@@ -113,12 +113,17 @@ class MobileInsightXmlToListConverter(object):
                 for subpacket in subpackets:
                     datas = subpacket["PDCPDL CIPH DATA"]
                     for data in datas:
-                        if PDCP_fn and PDCP_fn > int(data["Sys FN"]):
+                        sys_fn = int(data["Sys FN"])
+                        sub_fn = int(data["Sub FN"])
+
+                        time_stamp = PDCP_counter * 10240 + sys_fn * 10 + sub_fn
+
+                        if PDCP_fn and PDCP_fn > time_stamp:
                             PDCP_counter += 1
-                        PDCP_fn = int(data["Sys FN"])
-                        time_stamp = float(
-                            '.'.join((data["Sys FN"], data["Sub FN"])))
-                        time_stamp += PDCP_counter * 1024
+                            time_stamp += 10240
+
+                        PDCP_fn = time_stamp
+
                         current_packet = AtomPacket(data, time_stamp, "PDCP")
 
                         current_list = PDCP_packets.get(time_stamp, [])
@@ -126,21 +131,23 @@ class MobileInsightXmlToListConverter(object):
 
                         PDCP_packets[time_stamp] = current_list
 
-
             elif "type_id" in new_dict and new_dict[
                 "type_id"] == "LTE_RLC_DL_AM_All_PDU":
                 subpackets = new_dict["Subpackets"]
                 for subpacket in subpackets:
                     datas = subpacket["RLCDL PDUs"]
                     for data in datas:
+
                         # only collect the actual data instead of control data
                         if data["PDU TYPE"] == "RLCDL DATA":
-                            if RLC_fn and RLC_fn > int(data["sys_fn"]):
+                            sys_fn = int(data["sys_fn"])
+                            sub_fn = int(data["sub_fn"])
+                            time_stamp = RLC_counter * 10240 + sys_fn * 10 + sub_fn
+
+                            if RLC_fn and RLC_fn > time_stamp:
                                 RLC_counter += 1
-                            RLC_fn = int(data["sys_fn"])
-                            time_stamp = float(
-                                '.'.join((data["sys_fn"], data["sub_fn"])))
-                            time_stamp += RLC_counter * 1024
+                                time_stamp += 10240
+                            RLC_fn = time_stamp
 
                             current_packet = AtomPacket(data, time_stamp, "RLC")
 
@@ -158,12 +165,16 @@ class MobileInsightXmlToListConverter(object):
                 "type_id"] == "LTE_PHY_PDSCH_Stat_Indication":
                 records = new_dict["Records"]
                 for record in records:
-                    if PHY_fn and PHY_fn > int(record["Frame Num"]):
+                    frame_num = int(record["Frame Num"])
+                    subframe_num = int(record["Subframe Num"])
+
+                    time_stamp = PHY_counter * 10240 + frame_num * 10 + subframe_num
+
+                    if PHY_fn and PHY_fn > time_stamp:
                         PHY_counter += 1
-                    PHY_fn = int(record["Frame Num"])
-                    time_stamp = float(
-                        '.'.join((record["Frame Num"], record["Subframe Num"])))
-                    time_stamp += PHY_counter* 1024
+                        time_stamp += 10240
+
+                    PHY_fn = time_stamp
 
                     current_list = PHY_packets.get(time_stamp, [])
                     transport_blocks = record["Transport Blocks"]
@@ -192,5 +203,161 @@ class MobileInsightXmlToListConverter(object):
                PDCP_packets, PHY_time_stamps, PHY_packets
 
     @staticmethod
-    def convert_ul_xml_to_list(ul_xml_file):
-        pass
+    def convert_ul_xml_to_list(ul_xml_file, last_mac_fn = None, cur_mac_fn = None ):
+
+        tree = ET.parse(ul_xml_file)
+        root = tree.getroot()
+
+        PDCP_packets, RLC_packets, PHY_PUSCH_packets, MAC_packets, PHY_PDCCH_packets = \
+        {},           {},          {},          {},          {}
+
+        PDCP_counter, RLC_counter, PHY_PUSCH_counter, MAC_counter, PHY_PDCCH_counter = \
+        0,            0,           0,           0,           0
+
+        PDCP_fn, RLC_fn, PHY_PUSCH_fn, MAC_fn, PHY_PDCCH_fn = \
+        None,    None,   None,   None,   None
+
+        for child in root:
+            new_dict = {}
+            MobileInsightXmlToListConverter.convert_xmltree_to_dict(child,
+                                                                new_dict)
+
+            if "type_id" in new_dict and new_dict[
+                "type_id"] == "LTE_PDCP_UL_Cipher_Data_PDU":
+                subpackets = new_dict["Subpackets"]
+                for subpacket in subpackets:
+                    datas = subpacket["PDCPUL CIPH DATA"]
+                    for data in datas:
+
+                        sys_fn = int(data["Sys FN"])
+                        sub_fn = int(data["Sub FN"])
+
+                        time_stamp = PDCP_counter * 10240 + sys_fn*10 + sub_fn
+
+                        if PDCP_fn and PDCP_fn > time_stamp:
+                            PDCP_counter += 1
+                            time_stamp += 10240
+                        PDCP_fn = time_stamp
+
+                        current_packet = AtomPacket(data, time_stamp, "PDCP")
+
+                        current_list = PDCP_packets.get(time_stamp, [])
+                        current_list.append(current_packet)
+
+                        PDCP_packets[time_stamp] = current_list
+            elif "type_id" in new_dict and new_dict[
+                "type_id"] == "LTE_PHY_PDCCH_PHICH_Indication_Report":
+                    records = new_dict["Records"]
+                    for record in records:
+                        sys_fn = int(record["PDCCH Timing SFN"])
+                        sub_fn = int(record["PDCCH Timing Sub-FN"])
+                        time_stamp = PHY_PDCCH_counter * 10240 + sys_fn * 10 + sub_fn
+
+                        if PHY_PDCCH_fn and PHY_PDCCH_fn > time_stamp:
+                            PHY_PDCCH_counter += 1
+                            time_stamp += 10240
+
+                        PHY_PDCCH_fn = time_stamp
+
+                        current_packet = AtomPacket(record, time_stamp, "PHY_PDCCH")
+                        current_list = PHY_PDCCH_packets.get(time_stamp, [])
+                        current_list.append(current_packet)
+                        PHY_PDCCH_packets[time_stamp] = current_list
+
+            elif "type_id" in new_dict and new_dict[
+                "type_id"] == "LTE_PHY_PUSCH_Tx_Report":
+                records = new_dict["Records"]
+                for record in records:
+                    time_stamp = PHY_PUSCH_counter * 10240 + int(record["Current SFN SF"])
+                    if PHY_PUSCH_fn and PHY_PUSCH_fn > time_stamp:
+                        PHY_PUSCH_counter += 1
+                        time_stamp += 10240
+                    PHY_PUSCH_fn = time_stamp
+
+                    current_packet = AtomPacket(record, time_stamp, "PHY_PUSCH")
+                    current_list = PHY_PUSCH_packets.get(time_stamp, [])
+                    current_list.append(current_packet)
+
+                    PHY_PUSCH_packets[time_stamp] = current_list
+            elif  "type_id" in new_dict and new_dict[
+                "type_id"] == "LTE_RLC_UL_AM_All_PDU":
+                subpackets = new_dict["Subpackets"]
+                for subpacket in subpackets:
+                    datas = subpacket["RLCUL PDUs"]
+                    for data in datas:
+                        if data["PDU TYPE"] == "RLCUL DATA":
+
+                            sys_fn = int(data["sys_fn"])
+                            sub_fn = int(data["sub_fn"])
+
+                            time_stamp = RLC_counter * 1024 + sys_fn * 10 + sub_fn
+
+                            if RLC_fn and RLC_fn > time_stamp:
+                                RLC_counter += 1
+                                time_stamp += 1024
+
+                            RLC_fn = time_stamp
+                            current_packet = AtomPacket(data, time_stamp, "RLC")
+
+                            if "RLC DATA LI" in data:
+                                current_packet.information_dict["NUMBER OF LI"] \
+                                    = len(data["RLC DATA LI"])
+
+                            current_list = RLC_packets.get(time_stamp, [])
+                            current_list.append(current_packet)
+
+                            RLC_packets[time_stamp] = current_list
+            elif "type_id" in new_dict and new_dict[
+                "type_id"] == "LTE_MAC_UL_Buffer_Status_Internal":
+                subpackets = new_dict["Subpackets"]
+                for subpacket in subpackets:
+                    if "Samples" in subpacket:
+                        samples = subpacket["Samples"]
+                        for sample in samples:
+                            sub_mac_fn = int(sample['Sub FN'])
+                            sys_mac_fn = int(sample['Sys FN'])
+
+                            time_stamp = None
+                            if not MAC_fn:
+                                MAC_fn = last_mac_fn
+                                time_stamp = cur_mac_fn
+                            elif sys_mac_fn <= 1023 and sub_mac_fn <= 9:
+                                    time_stamp = MAC_counter * 10240 + \
+                                                 sys_mac_fn * 10 + sub_mac_fn
+                                    if MAC_fn and MAC_fn > time_stamp:
+                                        MAC_counter +=1
+                                        time_stamp += 10240
+                                    MAC_fn = time_stamp
+                            else:
+                                time_stamp = MAC_fn + 1
+                                MAC_fn = time_stamp
+
+                            current_packet = AtomPacket(sample["LCIDs"][3], time_stamp, "MAC")
+
+                            current_list = MAC_packets.get(time_stamp, [])
+                            current_list.append(current_packet)
+
+                            MAC_packets[time_stamp] = current_list
+
+        PDCP_time_stamps = list(PDCP_packets.keys())
+        RLC_time_stamps = list(RLC_packets.keys())
+        PHY_PUSCH_time_stamps = list(PHY_PUSCH_packets.keys())
+        MAC_time_stamps = list(MAC_packets.keys())
+        PHY_PDCCH_time_stamps = list(PHY_PDCCH_packets.keys())
+
+        PDCP_time_stamps.sort(reverse=True)
+        RLC_time_stamps.sort(reverse=True)
+        PHY_PDCCH_time_stamps.sort(reverse=True)
+        MAC_time_stamps.sort(reverse=True)
+        PHY_PUSCH_time_stamps.sort(reverse=True)
+
+        return RLC_time_stamps, RLC_packets, PDCP_time_stamps, PDCP_packets, \
+               PHY_PUSCH_time_stamps, PHY_PUSCH_packets, PHY_PDCCH_time_stamps, \
+               PHY_PDCCH_packets, MAC_time_stamps, MAC_packets
+
+
+
+
+
+
+
