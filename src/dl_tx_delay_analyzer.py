@@ -59,19 +59,12 @@ def main():
         = MobileInsightXmlToListConverter.convert_dl_xml_to_list("../logs/cr_dl_unit.txt")
 
     print(RLC_packets)
-    # print(PHY_PUSCH_packets)
-    # print(PHY_PDCCH_packets)
-    # print(MAC_packets)
 
-    # how to get the number of li in a single RLC packets
-    # number_of_li = packet.find_value("NUMBER OF LI")
-    # return value if it has li otherwise None
-
-    analyzer = DlTxDelayAnalyzer()
-    analyzer.RLC_packets = RLC_packets
-    rlc = analyzer.mergeRLC()
-    for t in rlc:
-        print(t)
+    # analyzer = DlTxDelayAnalyzer()
+    # analyzer.RLC_packets = RLC_packets
+    # rlc = analyzer.mergeRLC()
+    # for t in rlc:
+    #     print(t)
 
 if __name__ == '__main__':
     main()
