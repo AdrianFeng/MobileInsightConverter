@@ -56,7 +56,7 @@ class DlTxDelayAnalyzer(object):
 def main():
 
     RLC_packets, PHY_time_stamps, PHY_packets \
-        = MobileInsightXmlToListConverter.convert_dl_xml_to_list("../logs/cr_dl_unit.txt")
+        = MobileInsightXmlToListConverter.convert_dl_xml_to_list("../logs/cr_dl_rlc.txt")
 
     print(len(RLC_packets))
     for t in RLC_packets:

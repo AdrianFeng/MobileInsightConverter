@@ -295,8 +295,10 @@ class MobileInsightXmlToListConverter(object):
                             current_packet = AtomPacket(data, time_stamp, "RLC")
 
                             if "RLC DATA LI" in data:
-                                current_packet.information_dict["NUMBER OF LI"] \
+                                current_packet.information_dict["LI"]\
                                     = len(data["RLC DATA LI"])
+                            else:
+                                current_packet.information_dict["LI"] = 0
 
                             current_list = RLC_packets.get(time_stamp, [])
                             current_list.append(current_packet)
