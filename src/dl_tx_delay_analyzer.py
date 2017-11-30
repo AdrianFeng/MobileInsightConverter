@@ -5,6 +5,7 @@ import os
 from src.log_parser import MobileInsightXmlToListConverter
 from functools import reduce
 from typing import List
+import functools
 
 class DlTxDelayAnalyzer(object):
     def __init__(self):
@@ -37,51 +38,40 @@ class DlTxDelayAnalyzer(object):
                 return PHY_packet
         return None
 
-    def mergeTwoRLC(self, processed, nextRLC) -> List:
+    def mergeTwoRLC(self, processed, nextRLC, lastFI) -> List:
         # merge 2 RLC packet, input to reduce()
-        n = nextRLC.find_value("LI") + 1 - nextRLC.find_value("FI")[1]  # number of complete PDCP packets
+        n = nextRLC.find_value("LI") + 1 - int(nextRLC.find_value("FI")[1])  # number of complete PDCP packets
         if not processed:
+            lastFI = nextRLC.find_value("FI")[1]
             return [nextRLC.time_stamp] * n
         else:
-            assert processed[-1].find_value("FI")[1] == nextRLC.find_value("FI")[0]
+            assert lastFI == nextRLC.find_value("FI")[0]
+            lastFI = nextRLC.find_value("FI")[1]
             return processed + [nextRLC.time_stamp] * n
 
     def mergeRLC(self) -> List:
-        return reduce(self.mergeTwoRLC(), self.RLC_packets)
+        return reduce(functools.partial(self.mergeTwoRLC, lastFI="0"), self.RLC_packets, [])
 
 
 def main():
 
-    # RLC_time_stamps, RLC_packets, \
-    # PDCP_time_stamps, PDCP_packets, \
-    # PHY_time_stamps, PHY_packets \
-    #     = MobileInsightXmlToListConverter.convert_dl_xml_to_list("../logs/cr_dl_unit.txt")
-
-    RLC_time_stamps, RLC_packets, PDCP_time_stamps, PDCP_packets, \
-    PHY_PUSCH_time_stamps, PHY_PUSCH_packets, PHY_PDCCH_time_stamps, \
-    PHY_PDCCH_packets, MAC_time_stamps, MAC_packets \
-        = MobileInsightXmlToListConverter.convert_ul_xml_to_list("../logs/cr_ul_unit.txt", last_mac_fn= 8564, cur_mac_fn= 8564)
+    RLC_packets, PHY_time_stamps, PHY_packets \
+        = MobileInsightXmlToListConverter.convert_dl_xml_to_list("../logs/cr_dl_unit.txt")
 
     print(RLC_packets)
-    print(PDCP_packets)
-    print(PHY_PUSCH_packets)
-    print(PHY_PDCCH_packets)
-    print(MAC_packets)
+    # print(PHY_PUSCH_packets)
+    # print(PHY_PDCCH_packets)
+    # print(MAC_packets)
 
     # how to get the number of li in a single RLC packets
-    # number_of_li = packet.information_dict.get("NUMBER OF LI", None)
+    # number_of_li = packet.find_value("NUMBER OF LI")
     # return value if it has li otherwise None
 
-    # analyzer = DlTxDelayAnalyzer()
-
-    # return-signature of convert_dl_xml_to_list changed, please change the
-    # logic accordingly
-
-    # print(len(PDCP_packets))
-    # analyzer.PDCP_packets = PDCP_packets
-    # analyzer.RLC_packets = RLC_packets  # sorted by descending timestamp
-    # analyzer.PHY_packets = PHY_packets
-    # analyzer.analyze()
+    analyzer = DlTxDelayAnalyzer()
+    analyzer.RLC_packets = RLC_packets
+    rlc = analyzer.mergeRLC()
+    for t in rlc:
+        print(t)
 
 if __name__ == '__main__':
     main()
