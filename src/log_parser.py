@@ -150,8 +150,10 @@ class MobileInsightXmlToListConverter(object):
 
                             # this is where number of LI is being added
                             if "RLC DATA LI" in data:
-                                current_packet.information_dict["NUMBER OF LI"]\
+                                current_packet.information_dict["LI"]\
                                     = len(data["RLC DATA LI"])
+                            else:
+                                current_packet.information_dict["LI"] = 0
 
                             RLC_packets.append(current_packet)
 

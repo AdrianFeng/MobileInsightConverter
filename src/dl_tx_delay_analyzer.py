@@ -58,8 +58,9 @@ def main():
     RLC_packets, PHY_time_stamps, PHY_packets \
         = MobileInsightXmlToListConverter.convert_dl_xml_to_list("../logs/cr_dl_unit.txt")
 
-    print(RLC_packets)
-
+    print(len(RLC_packets))
+    for t in RLC_packets:
+        print(t)
     # analyzer = DlTxDelayAnalyzer()
     # analyzer.RLC_packets = RLC_packets
     # rlc = analyzer.mergeRLC()
