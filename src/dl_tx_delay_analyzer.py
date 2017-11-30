@@ -52,24 +52,21 @@ class DlTxDelayAnalyzer(object):
 
 def main():
 
-    # RLC_time_stamps, RLC_packets, \
-    # PDCP_time_stamps, PDCP_packets, \
-    # PHY_time_stamps, PHY_packets \
-    #     = MobileInsightXmlToListConverter.convert_dl_xml_to_list("../logs/cr_dl_unit.txt")
+    RLC_packets, PHY_time_stamps, PHY_packets \
+        = MobileInsightXmlToListConverter.convert_dl_xml_to_list("../logs/cr_dl_unit.txt")
 
-    RLC_time_stamps, RLC_packets, PDCP_time_stamps, PDCP_packets, \
-    PHY_PUSCH_time_stamps, PHY_PUSCH_packets, PHY_PDCCH_time_stamps, \
-    PHY_PDCCH_packets, MAC_time_stamps, MAC_packets \
-        = MobileInsightXmlToListConverter.convert_ul_xml_to_list("../logs/cr_ul_unit.txt", last_mac_fn= 8564, cur_mac_fn= 8564)
+    # RLC_time_stamps, RLC_packets, PDCP_time_stamps, PDCP_packets, \
+    # PHY_PUSCH_time_stamps, PHY_PUSCH_packets, PHY_PDCCH_time_stamps, \
+    # PHY_PDCCH_packets, MAC_time_stamps, MAC_packets \
+    #     = MobileInsightXmlToListConverter.convert_ul_xml_to_list("../logs/cr_ul_unit.txt", last_mac_fn= 8564, cur_mac_fn= 8564)
 
     print(RLC_packets)
-    print(PDCP_packets)
-    print(PHY_PUSCH_packets)
-    print(PHY_PDCCH_packets)
-    print(MAC_packets)
+    # print(PHY_PUSCH_packets)
+    # print(PHY_PDCCH_packets)
+    # print(MAC_packets)
 
     # how to get the number of li in a single RLC packets
-    # number_of_li = packet.information_dict.get("NUMBER OF LI", None)
+    # number_of_li = packet.find_value("NUMBER OF LI")
     # return value if it has li otherwise None
 
     # analyzer = DlTxDelayAnalyzer()

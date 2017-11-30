@@ -99,9 +99,9 @@ class MobileInsightXmlToListConverter(object):
         tree = ET.parse(dl_xml_file)
         root = tree.getroot()
 
-        PDCP_packets, RLC_packets, PHY_packets = {}, {}, {}
-        PDCP_counter, RLC_counter, PHY_counter = 0, 0, 0
-        PDCP_fn, RLC_fn, PHY_fn = None, None, None
+        RLC_packets, PHY_packets = [], {}
+        RLC_counter, PHY_counter = 0, 0
+        RLC_fn, PHY_fn = None, None
 
         for child in root:
             new_dict = {}
@@ -109,27 +109,28 @@ class MobileInsightXmlToListConverter(object):
 
             if "type_id" in new_dict and new_dict[
                 "type_id"] == "LTE_PDCP_DL_Cipher_Data_PDU":
-                subpackets = new_dict["Subpackets"]
-                for subpacket in subpackets:
-                    datas = subpacket["PDCPDL CIPH DATA"]
-                    for data in datas:
-                        sys_fn = int(data["Sys FN"])
-                        sub_fn = int(data["Sub FN"])
-
-                        time_stamp = PDCP_counter * 10240 + sys_fn * 10 + sub_fn
-
-                        if PDCP_fn and PDCP_fn > time_stamp:
-                            PDCP_counter += 1
-                            time_stamp += 10240
-
-                        PDCP_fn = time_stamp
-
-                        current_packet = AtomPacket(data, time_stamp, "PDCP")
-
-                        current_list = PDCP_packets.get(time_stamp, [])
-                        current_list.append(current_packet)
-
-                        PDCP_packets[time_stamp] = current_list
+                # subpackets = new_dict["Subpackets"]
+                # for subpacket in subpackets:
+                #     datas = subpacket["PDCPDL CIPH DATA"]
+                #     for data in datas:
+                #         sys_fn = int(data["Sys FN"])
+                #         sub_fn = int(data["Sub FN"])
+                #
+                #         time_stamp = PDCP_counter * 10240 + sys_fn * 10 + sub_fn
+                #
+                #         if PDCP_fn and PDCP_fn > time_stamp:
+                #             PDCP_counter += 1
+                #             time_stamp += 10240
+                #
+                #         PDCP_fn = time_stamp
+                #
+                #         current_packet = AtomPacket(data, time_stamp, "PDCP")
+                #
+                #         current_list = PDCP_packets.get(time_stamp, [])
+                #         current_list.append(current_packet)
+                #
+                #         PDCP_packets[time_stamp] = current_list
+                pass
 
             elif "type_id" in new_dict and new_dict[
                 "type_id"] == "LTE_RLC_DL_AM_All_PDU":
@@ -156,10 +157,7 @@ class MobileInsightXmlToListConverter(object):
                                 current_packet.information_dict["NUMBER OF LI"]\
                                     = len(data["RLC DATA LI"])
 
-                            current_list = RLC_packets.get(time_stamp, [])
-                            current_list.append(current_packet)
-
-                            RLC_packets[time_stamp] = current_list
+                            RLC_packets.append(current_packet)
 
             elif "type_id" in new_dict and new_dict[
                 "type_id"] == "LTE_PHY_PDSCH_Stat_Indication":
@@ -191,16 +189,15 @@ class MobileInsightXmlToListConverter(object):
                 print("packets cannot clarify, packets <%s - %s - %s> drops" % (
                     new_dict["timestamp"], new_dict["Version"],
                     new_dict["log_msg_len"]))
-        RLC_time_stamps = list(RLC_packets.keys())
-        PDCP_time_stamps = list(PDCP_packets.keys())
-        PHY_time_stamps = list(PHY_packets.keys())
 
-        RLC_time_stamps.sort(reverse=True)
-        PDCP_time_stamps.sort(reverse=True)
+        PHY_time_stamps = list(PHY_packets.keys())
         PHY_time_stamps.sort(reverse=True)
 
-        return RLC_time_stamps, RLC_packets, PDCP_time_stamps, \
-               PDCP_packets, PHY_time_stamps, PHY_packets
+        RLC_packets.sort(key=lambda packet: packet.time_stamp, reverse=True)
+
+        # RLC packets is a list of packets sorted by time stamps in descending
+        # order
+        return RLC_packets, PHY_time_stamps, PHY_packets
 
     @staticmethod
     def convert_ul_xml_to_list(ul_xml_file, last_mac_fn = None, cur_mac_fn = None ):
