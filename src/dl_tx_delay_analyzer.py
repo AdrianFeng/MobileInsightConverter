@@ -5,7 +5,6 @@ import os
 from src.log_parser import MobileInsightXmlToListConverter
 from functools import reduce
 from typing import List
-import functools
 
 class DlTxDelayAnalyzer(object):
     def __init__(self):
@@ -38,19 +37,18 @@ class DlTxDelayAnalyzer(object):
                 return PHY_packet
         return None
 
-    def mergeTwoRLC(self, processed, nextRLC, lastFI) -> List:
+    def mergeTwoRLC(self, processed, nextRLC) -> List:
         # merge 2 RLC packet, input to reduce()
+
         n = nextRLC.find_value("LI") + 1 - int(nextRLC.find_value("FI")[1])  # number of complete PDCP packets
+        print(nextRLC.find_value('sys_fn') + ' ' + nextRLC.find_value('sub_fn') + ' ' + str(n))
         if not processed:
-            lastFI = nextRLC.find_value("FI")[1]
             return [nextRLC.time_stamp] * n
         else:
-            assert lastFI == nextRLC.find_value("FI")[0]
-            lastFI = nextRLC.find_value("FI")[1]
             return processed + [nextRLC.time_stamp] * n
 
     def mergeRLC(self) -> List:
-        return reduce(functools.partial(self.mergeTwoRLC, lastFI="0"), self.RLC_packets, [])
+        return reduce(self.mergeTwoRLC, self.RLC_packets.reverse(), [])
 
 
 def main():
@@ -58,14 +56,14 @@ def main():
     RLC_packets, PHY_time_stamps, PHY_packets \
         = MobileInsightXmlToListConverter.convert_dl_xml_to_list("../logs/cr_dl_rlc.txt")
 
-    print(len(RLC_packets))
     for t in RLC_packets:
         print(t)
-    # analyzer = DlTxDelayAnalyzer()
-    # analyzer.RLC_packets = RLC_packets
-    # rlc = analyzer.mergeRLC()
-    # for t in rlc:
-    #     print(t)
+
+    analyzer = DlTxDelayAnalyzer()
+    analyzer.RLC_packets = RLC_packets
+    rlc = analyzer.mergeRLC()
+    for t in rlc:
+        print(t)
 
 if __name__ == '__main__':
     main()
