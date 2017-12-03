@@ -203,7 +203,7 @@ class MobileInsightXmlToListConverter(object):
         root = tree.getroot()
 
         PDCP_packets, RLC_packets, PHY_PUSCH_packets, MAC_packets, PHY_PDCCH_packets = \
-        {},           {},          {},          {},          {}
+        [],           [],          {},          {},          {}
 
         PDCP_counter, RLC_counter, PHY_PUSCH_counter, MAC_counter, PHY_PDCCH_counter = \
         0,            0,           0,           0,           0
@@ -235,10 +235,11 @@ class MobileInsightXmlToListConverter(object):
 
                         current_packet = AtomPacket(data, time_stamp, "PDCP")
 
-                        current_list = PDCP_packets.get(time_stamp, [])
-                        current_list.append(current_packet)
+                        PDCP_packets.append(current_packet)
+                        #current_list = PDCP_packets.get(time_stamp, [])
+                        #current_list.append(current_packet)
 
-                        PDCP_packets[time_stamp] = current_list
+                        #PDCP_packets[time_stamp] = current_list
             elif "type_id" in new_dict and new_dict[
                 "type_id"] == "LTE_PHY_PDCCH_PHICH_Indication_Report":
                     records = new_dict["Records"]
@@ -299,10 +300,9 @@ class MobileInsightXmlToListConverter(object):
                             else:
                                 current_packet.information_dict["LI"] = 0
 
-                            current_list = RLC_packets.get(time_stamp, [])
-                            current_list.append(current_packet)
+                            RLC_packets.append(current_packet)
 
-                            RLC_packets[time_stamp] = current_list
+                            
             elif "type_id" in new_dict and new_dict[
                 "type_id"] == "LTE_MAC_UL_Buffer_Status_Internal":
                 subpackets = new_dict["Subpackets"]
@@ -330,24 +330,24 @@ class MobileInsightXmlToListConverter(object):
 
                             current_packet = AtomPacket(sample["LCIDs"][3], time_stamp, "MAC")
 
-                            current_list = MAC_packets.get(time_stamp, [])
-                            current_list.append(current_packet)
+                            #current_list = MAC_packets.get(time_stamp, [])
+                            #current_list.append(current_packet)
 
-                            MAC_packets[time_stamp] = current_list
+                            MAC_packets[time_stamp] = current_packet
 
-        PDCP_time_stamps = list(PDCP_packets.keys())
-        RLC_time_stamps = list(RLC_packets.keys())
+        #PDCP_time_stamps = list(PDCP_packets.keys())
+
         PHY_PUSCH_time_stamps = list(PHY_PUSCH_packets.keys())
         MAC_time_stamps = list(MAC_packets.keys())
         PHY_PDCCH_time_stamps = list(PHY_PDCCH_packets.keys())
 
-        PDCP_time_stamps.sort(reverse=True)
-        RLC_time_stamps.sort(reverse=True)
+        #PDCP_time_stamps.sort(reverse=True)
+
         PHY_PDCCH_time_stamps.sort(reverse=True)
-        MAC_time_stamps.sort(reverse=True)
+        MAC_time_stamps.sort(reverse=False)
         PHY_PUSCH_time_stamps.sort(reverse=True)
 
-        return RLC_time_stamps, RLC_packets, PDCP_time_stamps, PDCP_packets, \
+        return RLC_packets, PDCP_packets, \
                PHY_PUSCH_time_stamps, PHY_PUSCH_packets, PHY_PDCCH_time_stamps, \
                PHY_PDCCH_packets, MAC_time_stamps, MAC_packets
 
