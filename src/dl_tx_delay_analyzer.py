@@ -37,31 +37,43 @@ class DlTxDelayAnalyzer(object):
                 return PHY_packet
         return None
 
-    def mergeTwoRLC(self, processed, nextRLC) -> List:
-        # merge 2 RLC packet, input to reduce()
 
-        n = nextRLC.find_value("LI") + 1 - int(nextRLC.find_value("FI")[1])  # number of complete PDCP packets
-        print(nextRLC.find_value('sys_fn') + ' ' + nextRLC.find_value('sub_fn') + ' ' + str(n))
-        if not processed:
-            return [nextRLC.time_stamp] * n
-        else:
-            return processed + [nextRLC.time_stamp] * n
+def mergeTwoRLCEnd(processed, nextRLC) -> List:
+    # merge 2 RLC packet, input to reduce()
+    n = nextRLC.find_value("LI") + 1 - int(nextRLC.find_value("FI")[1])  # number of complete PDCP packets
+    print(nextRLC.find_value('sys_fn') + ' ' + nextRLC.find_value('sub_fn') + ' ' + str(n))
+    if not processed:
+        return [nextRLC.time_stamp] * n
+    else:
+        return processed + [nextRLC.time_stamp] * n
 
-    def mergeRLC(self) -> List:
-        return reduce(self.mergeTwoRLC, self.RLC_packets.reverse(), [])
+def mergeTwoRLCStart(processed, nextRLC) -> List:
+    # merge 2 RLC packet, input to reduce()
+    n = nextRLC.find_value("LI") + 1 - int(nextRLC.find_value("FI")[0])  # number of complete PDCP packets
+    print(nextRLC.find_value('sys_fn') + ' ' + nextRLC.find_value('sub_fn') + ' ' + str(n))
+    if not processed:
+        return [nextRLC.time_stamp] * n
+    else:
+        return processed + [nextRLC.time_stamp] * n
+
+def mergeRLC(RLC_packets):
+    ends = reduce(mergeTwoRLCEnd, RLC_packets, [])
+    starts = reduce(mergeTwoRLCStart, RLC_packets, [])
+    print(ends)
+    print(starts)
+    return zip(starts, ends)
 
 
 def main():
-
     RLC_packets, PHY_time_stamps, PHY_packets \
         = MobileInsightXmlToListConverter.convert_dl_xml_to_list("../logs/cr_dl_rlc.txt")
 
     for t in RLC_packets:
-        print(t)
+        print(t.find_value('sys_fn') + ' ' + t.find_value('sub_fn') + ' ' +t.find_value('FI'))
 
     analyzer = DlTxDelayAnalyzer()
-    analyzer.RLC_packets = RLC_packets
-    rlc = analyzer.mergeRLC()
+
+    rlc = mergeRLC(RLC_packets[::-1])
     for t in rlc:
         print(t)
 
