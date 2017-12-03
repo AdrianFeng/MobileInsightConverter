@@ -2,7 +2,7 @@
 # author: Jiuru Shao
 
 import os
-from .log_parser import MobileInsightXmlToListConverter
+from log_parser import MobileInsightXmlToListConverter
 from functools import reduce
 from typing import List
 

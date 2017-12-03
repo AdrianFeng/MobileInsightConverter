@@ -202,8 +202,8 @@ class MobileInsightXmlToListConverter(object):
         tree = ET.parse(ul_xml_file)
         root = tree.getroot()
 
-        PDCP_packets, RLC_packets, PHY_PUSCH_packets, MAC_packets, PHY_PDCCH_packets = \
-        [],           [],          {},          {},          {}
+        PDCP_packets, RLC_packets, RLC_packets_dict, PHY_PUSCH_packets, MAC_packets, PHY_PDCCH_packets = \
+        [],           [],          {},       {},          {},          {}
 
         PDCP_counter, RLC_counter, PHY_PUSCH_counter, MAC_counter, PHY_PDCCH_counter = \
         0,            0,           0,           0,           0
@@ -255,9 +255,9 @@ class MobileInsightXmlToListConverter(object):
                         PHY_PDCCH_fn = time_stamp
 
                         current_packet = AtomPacket(record, time_stamp, "PHY_PDCCH")
-                        current_list = PHY_PDCCH_packets.get(time_stamp, [])
-                        current_list.append(current_packet)
-                        PHY_PDCCH_packets[time_stamp] = current_list
+                        #current_list = PHY_PDCCH_packets.get(time_stamp, [])
+                        #current_list.append(current_packet)
+                        PHY_PDCCH_packets[time_stamp] = current_packet
 
             elif "type_id" in new_dict and new_dict[
                 "type_id"] == "LTE_PHY_PUSCH_Tx_Report":
@@ -270,10 +270,10 @@ class MobileInsightXmlToListConverter(object):
                     PHY_PUSCH_fn = time_stamp
 
                     current_packet = AtomPacket(record, time_stamp, "PHY_PUSCH")
-                    current_list = PHY_PUSCH_packets.get(time_stamp, [])
-                    current_list.append(current_packet)
+                    #current_list = PHY_PUSCH_packets.get(time_stamp, [])
+                    #current_list.append(current_packet)
 
-                    PHY_PUSCH_packets[time_stamp] = current_list
+                    PHY_PUSCH_packets[time_stamp] = current_packet
             elif  "type_id" in new_dict and new_dict[
                 "type_id"] == "LTE_RLC_UL_AM_All_PDU":
                 subpackets = new_dict["Subpackets"]
@@ -285,11 +285,11 @@ class MobileInsightXmlToListConverter(object):
                             sys_fn = int(data["sys_fn"])
                             sub_fn = int(data["sub_fn"])
 
-                            time_stamp = RLC_counter * 1024 + sys_fn * 10 + sub_fn
+                            time_stamp = RLC_counter * 10240 + sys_fn * 10 + sub_fn
 
                             if RLC_fn and RLC_fn > time_stamp:
                                 RLC_counter += 1
-                                time_stamp += 1024
+                                time_stamp += 10240
 
                             RLC_fn = time_stamp
                             current_packet = AtomPacket(data, time_stamp, "RLC")
@@ -301,6 +301,10 @@ class MobileInsightXmlToListConverter(object):
                                 current_packet.information_dict["LI"] = 0
 
                             RLC_packets.append(current_packet)
+                            current_list = RLC_packets_dict.get(time_stamp, [])
+                            current_list.append(current_packet)
+
+                            RLC_packets_dict[time_stamp] = current_list
 
                             
             elif "type_id" in new_dict and new_dict[
@@ -347,7 +351,7 @@ class MobileInsightXmlToListConverter(object):
         MAC_time_stamps.sort(reverse=False)
         PHY_PUSCH_time_stamps.sort(reverse=True)
 
-        return RLC_packets, PDCP_packets, \
+        return RLC_packets, RLC_packets_dict, PDCP_packets, \
                PHY_PUSCH_time_stamps, PHY_PUSCH_packets, PHY_PDCCH_time_stamps, \
                PHY_PDCCH_packets, MAC_time_stamps, MAC_packets
 
