@@ -161,8 +161,7 @@ class UlTxLatencyAnalyzer(object):
             if (ts + 4 in self.PDCCH_pacekts):
                 
                 pdcch_pkt = self.PDCCH_pacekts[ts + 4]
-                records = pdcch_pkt.find_value("Records")
-                response = records["PHICH Value"]
+                response = pdcch_pkt["PHICH Value"]
                 
                 # check ack/nack for pkt sent after 4ms
                 if (response == "NACK"):
@@ -174,6 +173,7 @@ class UlTxLatencyAnalyzer(object):
                     print("4ms after packet sent, there is a record but not NACK or ACK.")
             else:
                 print("4ms after packet sent, neither NACK nor ACK received.")
+                return None
     
     
     def cal_header_length(k):
