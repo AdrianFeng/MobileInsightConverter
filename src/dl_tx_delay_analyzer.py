@@ -48,7 +48,7 @@ class DlTxDelayAnalyzer(object):
             return processed + [nextRLC.time_stamp] * n
 
     def mergeRLC(self) -> List:
-        return reduce(self.mergeTwoRLC, self.RLC_packets.reverse(), [])
+        return reduce(self.mergeTwoRLC, self.RLC_packets[::-1], [])
 
 
 def main():
@@ -63,7 +63,7 @@ def main():
     analyzer.RLC_packets = RLC_packets
     rlc = analyzer.mergeRLC()
     for t in rlc:
-        print(t)
+        print(t.)
 
 if __name__ == '__main__':
     main()
