@@ -331,10 +331,10 @@ class MobileInsightXmlToListConverter(object):
 
                             current_packet = AtomPacket(sample["LCIDs"][3], time_stamp, "MAC")
 
-                            current_list = MAC_packets.get(time_stamp, [])
-                            current_list.append(current_packet)
+                            #current_list = MAC_packets.get(time_stamp, [])
+                            #current_list.append(current_packet)
 
-                            MAC_packets[time_stamp] = current_list
+                            MAC_packets[time_stamp] = current_packet
 
         #PDCP_time_stamps = list(PDCP_packets.keys())
 
@@ -345,7 +345,7 @@ class MobileInsightXmlToListConverter(object):
         #PDCP_time_stamps.sort(reverse=True)
 
         PHY_PDCCH_time_stamps.sort(reverse=True)
-        MAC_time_stamps.sort(reverse=True)
+        MAC_time_stamps.sort(reverse=False)
         PHY_PUSCH_time_stamps.sort(reverse=True)
 
         return RLC_packets, PDCP_packets, \

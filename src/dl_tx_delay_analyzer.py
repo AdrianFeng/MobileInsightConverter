@@ -2,7 +2,7 @@
 # author: Jiuru Shao
 
 import os
-from src.log_parser import MobileInsightXmlToListConverter
+from log_parser import MobileInsightXmlToListConverter
 from functools import reduce
 from typing import List
 
@@ -59,8 +59,8 @@ def mergeTwoRLCStart(processed, nextRLC) -> List:
 def mergeRLC(RLC_packets):
     ends = reduce(mergeTwoRLCEnd, RLC_packets, [])
     starts = reduce(mergeTwoRLCStart, RLC_packets, [])
-    print(ends)
-    print(starts)
+    #print(ends)
+    #print(starts)
     return zip(starts, ends)
 
 
