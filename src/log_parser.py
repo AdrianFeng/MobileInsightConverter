@@ -95,7 +95,7 @@ class MobileInsightXmlToListConverter(object):
         tree = ET.parse(dl_xml_file)
         root = tree.getroot()
 
-        RLC_packets, PHY_packets = [], {}
+        RLC_packets, PHY_packets = [], []
         RLC_counter, PHY_counter = 0, 0
         RLC_fn, PHY_fn = None, None
 
@@ -172,13 +172,12 @@ class MobileInsightXmlToListConverter(object):
 
                     PHY_fn = time_stamp
 
-                    current_list = PHY_packets.get(time_stamp, [])
                     transport_blocks = record["Transport Blocks"]
                     for transport_block in transport_blocks:
                         current_packet = AtomPacket(transport_block, time_stamp,
                                                     "PHY")
-                        current_list.append(current_packet)
-                    PHY_packets[time_stamp] = current_list
+                        PHY_packets.append(current_packet)
+
 
             elif "type_id" in new_dict and new_dict[
                 "type_id"] == "LTE_MAC_DL_Transport_Block":
@@ -188,14 +187,14 @@ class MobileInsightXmlToListConverter(object):
                     new_dict["timestamp"], new_dict["Version"],
                     new_dict["log_msg_len"]))
 
-        PHY_time_stamps = list(PHY_packets.keys())
-        PHY_time_stamps.sort(reverse=True)
+        # PHY_time_stamps = list(PHY_packets.keys())
+        # PHY_time_stamps.sort(reverse=True)
 
-        RLC_packets.sort(key=lambda packet: packet.time_stamp, reverse=True)
-
+        RLC_packets.sort(key=lambda packet: packet.time_stamp, reverse=False)
+        PHY_packets.sort(key=lambda packet: packet.time_stamp, reverse=True)
         # RLC packets is a list of packets sorted by time stamps in descending
         # order
-        return RLC_packets, PHY_time_stamps, PHY_packets
+        return RLC_packets, PHY_packets
 
     @staticmethod
     def convert_ul_xml_to_list(ul_xml_file, last_mac_fn = None, cur_mac_fn = None ):
