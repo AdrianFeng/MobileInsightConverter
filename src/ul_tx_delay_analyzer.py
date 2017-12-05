@@ -99,6 +99,7 @@ class UlTxLatencyAnalyzer(object):
             ##if mac buffer become larger, 
             
             if (int(MAC_packet.find_value('New bytes')) > last_buffer_bytes): # new pdcp pkts coming in for sure
+                print(ts)
                 if (ts in self.RLC_packets_dict):
                     rlc_bytes = self.compute_rlc_bytes(ts) 
                     self.mac_buffer.append([ts, int(MAC_packet.find_value('New bytes')) - last_buffer_bytes + rlc_bytes])
