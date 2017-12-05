@@ -27,16 +27,20 @@ def mergeTwoRLCStart(processed, nextRLC) -> List:
         return processed + [nextRLC.time_stamp] * n
 
 
+
+def checkRLC(RLC_packets):
+    for i in range(0, len(RLC_packets)-1):
+        assert RLC_packets[i].find_value('FI')[1] == RLC_packets[i+1].find_value('FI')[0]
+
+
 def mergeRLC(RLC_packets):
+    checkRLC(RLC_packets)
     ends = reduce(mergeTwoRLCEnd, RLC_packets, [])
     starts = reduce(mergeTwoRLCStart, RLC_packets, [])
     assert(len(ends) == len(starts))
     return zip(starts, ends)
 
 
-def checkRLC(RLC_packets):
-    for i in range(0, len(RLC_packets)-1):
-        assert RLC_packets[i].FI[1] == RLC_packets[i+1].FI[0]
 
 
 class DlTxDelayAnalyzer(object):
