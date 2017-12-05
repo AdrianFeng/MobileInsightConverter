@@ -336,8 +336,8 @@ class MobileInsightXmlToListConverter(object):
 
                             #current_list = MAC_packets.get(time_stamp, [])
                             #current_list.append(current_packet)
-
                             MAC_packets[time_stamp] = current_packet
+        #print(RLC_counter)
 
         #PDCP_time_stamps = list(PDCP_packets.keys())
 
