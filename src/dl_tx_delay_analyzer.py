@@ -2,7 +2,7 @@
 # author: Jiuru Shao
 
 import os
-from log_parser import MobileInsightXmlToListConverter
+from src.log_parser import MobileInsightXmlToListConverter
 from functools import reduce
 from typing import List
 
@@ -30,10 +30,13 @@ def mergeTwoRLCStart(processed, nextRLC) -> List:
 def mergeRLC(RLC_packets):
     ends = reduce(mergeTwoRLCEnd, RLC_packets, [])
     starts = reduce(mergeTwoRLCStart, RLC_packets, [])
-
     assert(len(ends) == len(starts))
-
     return zip(starts, ends)
+
+
+def checkRLC(RLC_packets):
+    for i in range(0, len(RLC_packets)-1):
+        assert RLC_packets[i].FI[1] == RLC_packets[i+1].FI[0]
 
 
 class DlTxDelayAnalyzer(object):
@@ -51,7 +54,7 @@ class DlTxDelayAnalyzer(object):
             else:
                 self.txdelay += t_end - PHY_packet.time_stamp
                 self.totalPackets += 1
-                print(t_end, PHY_packet.time_stamp)
+                print(t_end, PHY_packet.time_stamp, t_end - PHY_packet.time_stamp)
         print(self.totalPackets, self.txdelay)
 
     def first_PHY_of_RLC(self, RLC_time_stamp):
@@ -78,14 +81,15 @@ class DlTxDelayAnalyzer(object):
 
 def main():
     RLC_packets, PHY_packets \
-        = MobileInsightXmlToListConverter.convert_dl_xml_to_list("../logs/cr_dl_rlc.txt")
+        = MobileInsightXmlToListConverter.convert_dl_xml_to_list("../logs/cr_dl_full.txt")
     #
     # print(len(PHY_packets))
     # for p in PHY_packets:
     #     print(p.time_stamp)
 
-    # for t in RLC_packets:
-    #     print(t.find_value('sys_fn') + ' ' + t.find_value('sub_fn') + ' ' + t.find_value('FI'))
+    #for t in RLC_packets:
+    #    print(t.time_stamp, t.find_value('FI'))
+    checkRLC(RLC_packets)
     rlc = mergeRLC(RLC_packets)
 
     analyzer = DlTxDelayAnalyzer()
