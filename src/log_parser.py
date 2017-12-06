@@ -244,7 +244,7 @@ class MobileInsightXmlToListConverter(object):
 
 
         RLC_packets.sort(key= lambda packet: packet.find_value("SN"), reverse= False)
-        PHY_packets.sort(key=lambda packet: packet.time_stamp, reverse=False)
+        PHY_packets.sort(key=lambda packet: packet.time_stamp, reverse=True)
         # RLC packets is a list of packets sorted by time stamps in descending
         # order
         return RLC_packets, PHY_packets

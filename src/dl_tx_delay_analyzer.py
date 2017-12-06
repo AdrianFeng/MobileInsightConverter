@@ -30,6 +30,8 @@ def mergeTwoRLCStart(processed, nextRLC) -> List:
 
 def checkRLC(RLC_packets):
     for i in range(0, len(RLC_packets)-1):
+        #print(RLC_packets[i].find_value('real_time'), RLC_packets[i+1].find_value('real_time'),
+        #      RLC_packets[i].find_value('SN'), RLC_packets[i+1].find_value('SN'),)
         assert RLC_packets[i].find_value('FI')[1] == RLC_packets[i+1].find_value('FI')[0]
 
 
@@ -41,6 +43,44 @@ def mergeRLC(RLC_packets):
     return zip(starts, ends)
 
 
+def mergeRLC2(RLC_packets):
+    checkRLC(RLC_packets)
+    mergedRLC = []
+    start, end = None, None
+    for r in RLC_packets:
+        print(mergedRLC)
+        if r.find_value('FI') == '00':
+            mergedRLC.append((r.time_stamp, r.time_stamp))
+            start, end = None, None
+        elif r.find_value('FI') == '01': # we have a start ts, and we should pick the smallest ts of this PDCP
+            # add possible 'small' PDCP
+            mergedRLC += r.find_value('LI') * [(r.time_stamp, r.time_stamp)]
+            start, end = r.time_stamp, r.time_stamp
+        elif r.find_value('FI') == '11':
+            if r.find_value('LI') == 0: # no packet should be added
+                start = min(start, r.time_stamp)
+                end = max(end, r.time_stamp)
+            else:   # we come to the end of a PDCP + (LI-1)*small PDCP + start of next PDCP
+                start = min(start, r.time_stamp)
+                end = max(end, r.time_stamp)
+                mergedRLC += [(start, end)]
+                # add possible 'small' PDCP
+                mergedRLC += [(r.time_stamp, r.time_stamp)] * (r.find_value('LI') - 1)
+                # the beginning of next PDCP
+                start, end = r.time_stamp, r.time_stamp
+        else: # 10
+            if r.find_value('LI') == 0:
+                start = min(start, r.time_stamp)
+                end = max(end, r.time_stamp)
+                mergedRLC += [(start, end)]
+                start, end = None, None
+            else:
+                start = min(start, r.time_stamp)
+                end = max(end, r.time_stamp)
+                mergedRLC += [(start, end)]
+                mergedRLC += [(r.time_stamp, r.time_stamp)] * (r.find_value('LI') - 1)
+                start, end = None, None
+    return mergedRLC
 
 
 class DlTxDelayAnalyzer(object):
@@ -54,11 +94,11 @@ class DlTxDelayAnalyzer(object):
         for t_start, t_end in self.mergedRLCPackets:
             PHY_packet = self.first_PHY_of_RLC(t_start)
             if not PHY_packet:
-                print("Can't find PDCP for RLC at (%d, %d)" % (t_start, t_end))
+                print("Can't find PHY for RLC at (%d, %d)" % (t_start, t_end))
             else:
                 self.txdelay += t_end - PHY_packet.time_stamp
                 self.totalPackets += 1
-                print(t_end, PHY_packet.time_stamp, t_end - PHY_packet.time_stamp)
+                print(PHY_packet.find_value('real_time'), PHY_packet.time_stamp, t_end, t_end - PHY_packet.time_stamp)
         print(self.totalPackets, self.txdelay)
 
     def first_PHY_of_RLC(self, RLC_time_stamp):
@@ -66,15 +106,18 @@ class DlTxDelayAnalyzer(object):
         while self.PHY_packets[i].time_stamp > RLC_time_stamp:
             i += 1
 
+        assert self.PHY_packets[i].time_stamp == RLC_time_stamp
+
         lastNDI = self.PHY_packets[i].find_value("NDI")
         lastHarqId = self.PHY_packets[i].find_value("HARQ ID")
-        lastPHY = self.PHY_packets[i]
-        for PHY_packet in self.PHY_packets[i+1:]:
+        j = i
+        for idx in range(j+1, len(self.PHY_packets)):
+            PHY_packet = self.PHY_packets[idx]
             if PHY_packet.find_value("HARQ ID") == lastHarqId:
                 if PHY_packet.find_value("NDI") != lastNDI:
-                    return lastPHY
+                    return self.PHY_packets.pop(i)
                 else:
-                    lastPHY = PHY_packet
+                    i = idx
             else:
                 pass
 
@@ -85,21 +128,28 @@ class DlTxDelayAnalyzer(object):
 
 def main():
     RLC_packets, PHY_packets \
-        = MobileInsightXmlToListConverter.convert_dl_xml_to_list("../logs/cr_dl_full.txt")
+        = MobileInsightXmlToListConverter.convert_dl_xml_to_list("../logs/cr_dl_unit.txt")
+
+    # for p in PHY_packets:
+    #     print(p.time_stamp)
     #
     # print(len(PHY_packets))
     # for p in PHY_packets:
     #     print(p.time_stamp)
+    #
+    # for t in RLC_packets:
+    #     print(t.time_stamp, t.find_value('SN'))
 
-    #for t in RLC_packets:
-    #    print(t.time_stamp, t.find_value('FI'))
     checkRLC(RLC_packets)
-    rlc = mergeRLC(RLC_packets)
+    rlc = mergeRLC2(RLC_packets)
 
-    analyzer = DlTxDelayAnalyzer()
-    analyzer.PHY_packets = PHY_packets
-    analyzer.mergedRLCPackets = rlc
-    analyzer.analyze()
+    for r in rlc:
+        print(r)
+
+    # analyzer = DlTxDelayAnalyzer()
+    # analyzer.PHY_packets = PHY_packets
+    # analyzer.mergedRLCPackets = rlc
+    # analyzer.analyze()
 
 if __name__ == '__main__':
     main()
