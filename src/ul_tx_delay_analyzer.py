@@ -36,7 +36,7 @@ class UlTxLatencyAnalyzer(object):
             end_timestamps.append(self.find_last_pusch(ts_pair[1]))
         
         start_timestamps = []
-
+        #print(self.MAC_times)
         self.generate_buffer(self.MAC_packets)
         print(self.mac_buffer)
         for pkt in self.PDCP_packets:
@@ -99,6 +99,7 @@ class UlTxLatencyAnalyzer(object):
             ##if mac buffer become larger, 
             
             if (int(MAC_packet.find_value('New bytes')) > last_buffer_bytes): # new pdcp pkts coming in for sure
+                print(ts)
                 if (ts in self.RLC_packets_dict):
                     rlc_bytes = self.compute_rlc_bytes(ts) 
                     self.mac_buffer.append([ts, int(MAC_packet.find_value('New bytes')) - last_buffer_bytes + rlc_bytes])
@@ -123,7 +124,6 @@ class UlTxLatencyAnalyzer(object):
             ##mac buffer stays the same
             else:
                 if (ts in self.RLC_packets_dict):   ##if there is rlc packet sent
-                    print("RLC!! " + str(ts))
                     rlc_bytes = self.compute_rlc_bytes(ts) 
                     self.mac_buffer.append([ts, rlc_bytes])
 
