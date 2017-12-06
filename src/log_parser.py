@@ -139,7 +139,7 @@ class MobileInsightXmlToListConverter(object):
                     for data in datas:
 
                         # only collect the actual data instead of control data
-                        if data["PDU TYPE"] == "RLCDL DATA":
+                        if data["PDU TYPE"] == "RLCDL DATA" and data["rb_cfg_idx"] != "33":
                             sys_fn = int(data["sys_fn"])
                             sub_fn = int(data["sub_fn"])
                             time_stamp = RLC_counter * 10240 + sys_fn * 10 + sub_fn
@@ -333,8 +333,7 @@ class MobileInsightXmlToListConverter(object):
                 for subpacket in subpackets:
                     datas = subpacket["RLCUL PDUs"]
                     for data in datas:
-                        if data["PDU TYPE"] == "RLCUL DATA":
-
+                        if data["PDU TYPE"] == "RLCUL DATA" and data["rb_cfg_idx"] != "33":
                             sys_fn = int(data["sys_fn"])
                             sub_fn = int(data["sub_fn"])
 
@@ -414,5 +413,5 @@ if __name__ == "__main__":
         = MobileInsightXmlToListConverter.convert_dl_xml_to_list("../logs/cr_dl_full.txt")
 
     for packets in RLC_packets:
-        print("SN", packets.find_value("SN"), "time", packets.find_value("real_time"))
+        print("rg", packets.find_value("rb_cfg_idx"),"SN", packets.find_value("SN"), "time", packets.find_value("real_time"))
 
