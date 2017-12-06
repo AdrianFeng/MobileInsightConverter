@@ -98,8 +98,6 @@ class MobileInsightXmlToListConverter(object):
         RLC_packets, PHY_packets = [], []
         RLC_counter, PHY_counter = 0, 0
         RLC_fn, PHY_fn = None, None
-        RLC_sn_counter = 0
-        RLC_sn = None
 
         for child in root:
             new_dict = {}
@@ -134,15 +132,16 @@ class MobileInsightXmlToListConverter(object):
                 "type_id"] == "LTE_RLC_DL_AM_All_PDU":
                 real_time = new_dict["timestamp"][-12:]
                 subpackets = new_dict["Subpackets"]
+
                 for subpacket in subpackets:
                     datas = subpacket["RLCDL PDUs"]
+                    subpackets_list = []
                     for data in datas:
 
                         # only collect the actual data instead of control data
                         if data["PDU TYPE"] == "RLCDL DATA":
                             sys_fn = int(data["sys_fn"])
                             sub_fn = int(data["sub_fn"])
-                            sn = int(data["SN"])
                             time_stamp = RLC_counter * 10240 + sys_fn * 10 + sub_fn
 
                             if RLC_fn and RLC_fn > time_stamp:
@@ -151,17 +150,12 @@ class MobileInsightXmlToListConverter(object):
 
                             RLC_fn = time_stamp
 
-                            if RLC_sn and RLC_sn > sn:
-                                RLC_sn_counter +=1
-                                sn += 1024
-                            RLC_sn = sn
-
                             current_packet = AtomPacket(data, time_stamp, "RLC")
 
                             # add real time stamp
                             current_packet.information_dict["real_time"] = real_time
                             # add the SN
-                            current_packet.information_dict["SN"]= sn
+                            current_packet.information_dict["SN"] = int(current_packet.information_dict["SN"])
 
                             # this is where number of LI is being added
                             if "RLC DATA LI" in data:
@@ -169,8 +163,8 @@ class MobileInsightXmlToListConverter(object):
                                     = len(data["RLC DATA LI"])
                             else:
                                 current_packet.information_dict["LI"] = 0
-
-                            RLC_packets.append(current_packet)
+                            subpackets_list.append(current_packet)
+                    RLC_packets.append(subpackets_list)
 
             elif "type_id" in new_dict and new_dict[
                 "type_id"] == "LTE_PHY_PDSCH_Stat_Indication":
@@ -215,10 +209,42 @@ class MobileInsightXmlToListConverter(object):
         # for packet in RLC_packets:
         #     if int(packet.find_value["SN"])
 
-        RLC_packets.sort(key=lambda packet: packet.find_value("SN"), reverse=False)
+        # RLC_packets.sort(key=lambda packet: packet.find_value("SN"), reverse=False)
+
+        New_RLC_Packets = []
+        counter, prev_start  = 0, None
+        for sub_list in RLC_packets:
+            max_SN, min_SN = float("-inf"), float("inf")
+            if not sub_list:
+                continue
+            for packet in sub_list:
+                max_SN = max(packet.find_value("SN"), max_SN)
+                min_SN  = min(packet.find_value("SN"), min_SN)
+            if  0<= max_SN - min_SN <= 1000:
+                # print(max_SN, min_SN)
+                for packet in sub_list:
+                    packet.information_dict["SN"] = packet.find_value("SN") + counter*1024
+                    # print("SN is ", packet.find_value("SN"))
+                    New_RLC_Packets.append(packet)
+            else:
+                # print("max and min are large", max_SN, min_SN)
+                sub_list.sort(key=lambda packet: packet.find_value("SN"), reverse=True)
+                prev_SN = None
+                for packet in sub_list:
+                    current_SN = packet.find_value("SN") + counter*1024
+                    if prev_SN and prev_SN - current_SN >= 1000:
+                        counter +=1
+                        current_SN += 1024
+                    packet.information_dict["SN"] = current_SN
+                    # print("SN is ", packet.find_value("SN"))
+                    New_RLC_Packets.append(packet)
+                    prev_SN = current_SN
+
+        RLC_packets = New_RLC_Packets
 
 
-        PHY_packets.sort(key=lambda packet: packet.time_stamp, reverse=True)
+        RLC_packets.sort(key= lambda packet: packet.find_value("SN"), reverse= False)
+        PHY_packets.sort(key=lambda packet: packet.time_stamp, reverse=False)
         # RLC packets is a list of packets sorted by time stamps in descending
         # order
         return RLC_packets, PHY_packets
@@ -388,5 +414,5 @@ if __name__ == "__main__":
         = MobileInsightXmlToListConverter.convert_dl_xml_to_list("../logs/cr_dl_full.txt")
 
     for packets in RLC_packets:
-        print("SN", packets.find_value("SN"))
+        print("SN", packets.find_value("SN"), "time", packets.find_value("real_time"))
 
