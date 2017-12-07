@@ -48,9 +48,8 @@ def mergeRLC2(RLC_packets):
     mergedRLC = []
     start, end = None, None
     for r in RLC_packets:
-        print(mergedRLC)
         if r.find_value('FI') == '00':
-            mergedRLC.append((r.time_stamp, r.time_stamp))
+            mergedRLC += [(r.time_stamp, r.time_stamp)] * (r.find_value('LI') + 1)
             start, end = None, None
         elif r.find_value('FI') == '01': # we have a start ts, and we should pick the smallest ts of this PDCP
             # add possible 'small' PDCP
@@ -78,7 +77,7 @@ def mergeRLC2(RLC_packets):
                 start = min(start, r.time_stamp)
                 end = max(end, r.time_stamp)
                 mergedRLC += [(start, end)]
-                mergedRLC += [(r.time_stamp, r.time_stamp)] * (r.find_value('LI') - 1)
+                mergedRLC += [(r.time_stamp, r.time_stamp)] * r.find_value('LI')
                 start, end = None, None
     return mergedRLC
 
@@ -106,7 +105,7 @@ class DlTxDelayAnalyzer(object):
         while self.PHY_packets[i].time_stamp > RLC_time_stamp:
             i += 1
 
-        assert self.PHY_packets[i].time_stamp == RLC_time_stamp
+        # assert self.PHY_packets[i].time_stamp == RLC_time_stamp
 
         lastNDI = self.PHY_packets[i].find_value("NDI")
         lastHarqId = self.PHY_packets[i].find_value("HARQ ID")
@@ -128,15 +127,16 @@ class DlTxDelayAnalyzer(object):
 
 def main():
     RLC_packets, PHY_packets \
-        = MobileInsightXmlToListConverter.convert_dl_xml_to_list("../logs/cr_dl_unit.txt")
+        = MobileInsightXmlToListConverter.convert_dl_xml_to_list("../logs/cr_dl_full.txt")
 
     # for p in PHY_packets:
     #     print(p.time_stamp)
     #
-    # print(len(PHY_packets))
+    print(len(PHY_packets))
     # for p in PHY_packets:
     #     print(p.time_stamp)
     #
+
     # for t in RLC_packets:
     #     print(t.time_stamp, t.find_value('SN'))
 
@@ -146,10 +146,10 @@ def main():
     for r in rlc:
         print(r)
 
-    # analyzer = DlTxDelayAnalyzer()
-    # analyzer.PHY_packets = PHY_packets
-    # analyzer.mergedRLCPackets = rlc
-    # analyzer.analyze()
+    analyzer = DlTxDelayAnalyzer()
+    analyzer.PHY_packets = PHY_packets
+    analyzer.mergedRLCPackets = rlc
+    analyzer.analyze()
 
 if __name__ == '__main__':
     main()
