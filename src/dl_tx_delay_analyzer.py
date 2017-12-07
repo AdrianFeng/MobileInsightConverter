@@ -106,7 +106,7 @@ class DlTxDelayAnalyzer(object):
         while self.PHY_packets[i].time_stamp > RLC_time_stamp:
             i += 1
 
-        assert self.PHY_packets[i].time_stamp == RLC_time_stamp
+        #assert self.PHY_packets[i].time_stamp == RLC_time_stamp
 
         lastNDI = self.PHY_packets[i].find_value("NDI")
         lastHarqId = self.PHY_packets[i].find_value("HARQ ID")
@@ -128,7 +128,21 @@ class DlTxDelayAnalyzer(object):
 
 def main():
     RLC_packets, PHY_packets \
-        = MobileInsightXmlToListConverter.convert_dl_xml_to_list("../logs/cr_dl_unit.txt")
+        = MobileInsightXmlToListConverter.convert_dl_xml_to_list("../logs/cr_dl_full.txt")
+    print(PHY_packets)
+
+    RLC_index_PHY_time_dict = {}
+
+    analyzer = DlTxDelayAnalyzer()
+    analyzer.PHY_packets = PHY_packets
+    for index, RLC_packet in enumerate(RLC_packets):
+        PHY_packet = analyzer.first_PHY_of_RLC(RLC_packet.time_stamp)
+        if PHY_packet:
+            RLC_index_PHY_time_dict[index] = PHY_packet.time_stamp
+        else:
+            # raise Exception("PHY can not be found")
+            print("Phy cannot be found ")
+    print(RLC_index_PHY_time_dict)
 
     # for p in PHY_packets:
     #     print(p.time_stamp)
@@ -140,11 +154,11 @@ def main():
     # for t in RLC_packets:
     #     print(t.time_stamp, t.find_value('SN'))
 
-    checkRLC(RLC_packets)
-    rlc = mergeRLC2(RLC_packets)
-
-    for r in rlc:
-        print(r)
+    # checkRLC(RLC_packets)
+    # rlc = mergeRLC2(RLC_packets)
+    #
+    # for r in rlc:
+    #     print(r)
 
     # analyzer = DlTxDelayAnalyzer()
     # analyzer.PHY_packets = PHY_packets
