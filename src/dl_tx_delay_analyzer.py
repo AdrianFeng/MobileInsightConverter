@@ -46,39 +46,43 @@ def mergeRLC(RLC_packets):
 def mergeRLC2(RLC_packets):
     checkRLC(RLC_packets)
     mergedRLC = []
-    start, end = None, None
-    for r in RLC_packets:
+    start, end, startIdx = None, None, None
+    for idx, r in enumerate(RLC_packets):
         if r.find_value('FI') == '00':
-            mergedRLC += [(r.time_stamp, r.time_stamp)] * (r.find_value('LI') + 1)
-            start, end = None, None
+            mergedRLC += [(r.time_stamp, r.time_stamp, idx)] * (r.find_value('LI') + 1)
+            start, end, startIdx = None, None, None
         elif r.find_value('FI') == '01': # we have a start ts, and we should pick the smallest ts of this PDCP
             # add possible 'small' PDCP
-            mergedRLC += r.find_value('LI') * [(r.time_stamp, r.time_stamp)]
-            start, end = r.time_stamp, r.time_stamp
+            mergedRLC += r.find_value('LI') * [(r.time_stamp, r.time_stamp, idx)]
+            start, end, startIdx = r.time_stamp, r.time_stamp, idx
         elif r.find_value('FI') == '11':
             if r.find_value('LI') == 0: # no packet should be added
+                startIdx = idx if start > r.time_stamp else startIdx
                 start = min(start, r.time_stamp)
                 end = max(end, r.time_stamp)
             else:   # we come to the end of a PDCP + (LI-1)*small PDCP + start of next PDCP
+                startIdx = idx if start > r.time_stamp else startIdx
                 start = min(start, r.time_stamp)
                 end = max(end, r.time_stamp)
-                mergedRLC += [(start, end)]
+                mergedRLC += [(start, end, startIdx)]
                 # add possible 'small' PDCP
-                mergedRLC += [(r.time_stamp, r.time_stamp)] * (r.find_value('LI') - 1)
+                mergedRLC += [(r.time_stamp, r.time_stamp, idx)] * (r.find_value('LI') - 1)
                 # the beginning of next PDCP
-                start, end = r.time_stamp, r.time_stamp
+                start, end, startIdx = r.time_stamp, r.time_stamp, idx
         else: # 10
             if r.find_value('LI') == 0:
+                startIdx = idx if start > r.time_stamp else startIdx
                 start = min(start, r.time_stamp)
                 end = max(end, r.time_stamp)
-                mergedRLC += [(start, end)]
-                start, end = None, None
+                mergedRLC += [(start, end, startIdx)]
+                start, end, startIdx = None, None, None
             else:
+                startIdx = idx if start > r.time_stamp else startIdx
                 start = min(start, r.time_stamp)
                 end = max(end, r.time_stamp)
-                mergedRLC += [(start, end)]
-                mergedRLC += [(r.time_stamp, r.time_stamp)] * r.find_value('LI')
-                start, end = None, None
+                mergedRLC += [(start, end, startIdx)]
+                mergedRLC += [(r.time_stamp, r.time_stamp, idx)] * r.find_value('LI')
+                start, end, startIdx = None, None, None
     return mergedRLC
 
 
@@ -88,34 +92,42 @@ class DlTxDelayAnalyzer(object):
         self.totalPackets = 0
         self.PHY_packets = []
         self.mergedRLCPackets = []
+        self.RLC2PHY = {}
 
     def analyze(self):
-        for t_start, t_end in self.mergedRLCPackets:
-            PHY_packet = self.first_PHY_of_RLC(t_start)
-            if not PHY_packet:
+        for t_start, t_end, idx in self.mergedRLCPackets:
+            PHY_ts = self.RLC2PHY.get(idx, None)
+            if not PHY_ts:
                 print("Can't find PHY for RLC at (%d, %d)" % (t_start, t_end))
             else:
-                self.txdelay += t_end - PHY_packet.time_stamp
+                self.txdelay += t_end - PHY_ts
                 self.totalPackets += 1
-                print(PHY_packet.find_value('real_time'), PHY_packet.time_stamp, t_end, t_end - PHY_packet.time_stamp)
+                print(PHY_ts, t_start, t_end, t_end - PHY_ts)
         print(self.totalPackets, self.txdelay)
 
+
     def first_PHY_of_RLC(self, RLC_time_stamp):
+        if RLC_time_stamp == 11037:
+            print('fuck')
+
         i = 0
         while self.PHY_packets[i].time_stamp > RLC_time_stamp:
             i += 1
 
 
+        if self.PHY_packets[i].find_value('Did Recombining') == 'No':
+            return self.PHY_packets.pop(i)
+
         # assert self.PHY_packets[i].time_stamp == RLC_time_stamp
-
-
         lastNDI = self.PHY_packets[i].find_value("NDI")
         lastHarqId = self.PHY_packets[i].find_value("HARQ ID")
-        j = i
-        for idx in range(j+1, len(self.PHY_packets)):
-            PHY_packet = self.PHY_packets[idx]
-            if PHY_packet.find_value("HARQ ID") == lastHarqId:
-                if PHY_packet.find_value("NDI") != lastNDI:
+        lastTBIndex = self.PHY_packets[i].find_value("TB Index")
+
+        copyPHY = self.PHY_packets[:]
+        for idx in range(i+1, len(copyPHY)):
+            PHY_packet = copyPHY[idx]
+            if PHY_packet.find_value("HARQ ID") == lastHarqId and PHY_packet.find_value('TB Index') == lastTBIndex:
+                if PHY_packet.find_value("Did Recombining") == 'No':
                     return self.PHY_packets.pop(i)
                 else:
                     i = idx
@@ -131,7 +143,6 @@ def main():
     RLC_packets, PHY_packets \
         = MobileInsightXmlToListConverter.convert_dl_xml_to_list("../logs/cr_dl_full.txt")
 
-    print(PHY_packets)
 
     RLC_index_PHY_time_dict = {}
 
@@ -143,13 +154,17 @@ def main():
             RLC_index_PHY_time_dict[index] = PHY_packet.time_stamp
         else:
             # raise Exception("PHY can not be found")
-            print("Phy cannot be found ")
-    print(RLC_index_PHY_time_dict)
+            print("Phy cannot be found")
+
+    for k, v in sorted(RLC_index_PHY_time_dict.items()):
+        if v > 11050:
+            break
+        else:
+            print(k, v)
 
     # for p in PHY_packets:
     #     print(p.time_stamp)
     #
-    print(len(PHY_packets))
     # for p in PHY_packets:
     #     print(p.time_stamp)
     #
@@ -157,15 +172,20 @@ def main():
     # for t in RLC_packets:
     #     print(t.time_stamp, t.find_value('SN'))
 
-    # checkRLC(RLC_packets)
-    # rlc = mergeRLC2(RLC_packets)
+    checkRLC(RLC_packets)
+    rlc = mergeRLC2(RLC_packets)
     #
-    # for r in rlc:
-    #     print(r)
+    for i, r in enumerate(rlc):
+        if r[0] > 11050:
+            break
+        else:
+            print(i, r)
 
     analyzer = DlTxDelayAnalyzer()
+    analyzer.RLC2PHY = RLC_index_PHY_time_dict
     analyzer.PHY_packets = PHY_packets
     analyzer.mergedRLCPackets = rlc
+
     analyzer.analyze()
 
 if __name__ == '__main__':
