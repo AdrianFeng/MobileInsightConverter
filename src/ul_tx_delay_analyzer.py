@@ -20,9 +20,6 @@ class UlTxLatencyAnalyzer(object):
 
         self.MAC_packets = {}
         self.PDCCH_packets = {}
-        self.PUSCH_packets = {}
-        
-        
         self.MAC_times = []
         self.PDCCH_times = []
         self.PUSCH_times = []
@@ -42,6 +39,7 @@ class UlTxLatencyAnalyzer(object):
         for pkt in self.PDCP_packets:
             
             pdcp_bytes = int(pkt.find_value('PDU Size'))
+            #print(pdcp_bytes)
             ##PDCP_packet = self.PDCP_packets[ts] 
             ##start_time = self.load_2_buffer(PDCP_packet.find_value(time_stamp)) # pdcp layer
             ##last_rlc_time = self.find_last_rlc(PDCP_packet.find_value(time_stamp)) # rlc layer
@@ -77,6 +75,8 @@ class UlTxLatencyAnalyzer(object):
 
     def compute_rlc_bytes(self, ts):
         rlc_bytes = 0
+        #print(self.RLC_packets_dict[ts])
+        #print(self.MAC_packets[ts])
         for subpacket in self.RLC_packets_dict[ts]:
             if subpacket.find_value('RLC DATA LI'):
                 LI_num = len(subpacket.find_value('RLC DATA LI')) + 1
@@ -99,7 +99,6 @@ class UlTxLatencyAnalyzer(object):
             ##if mac buffer become larger, 
             
             if (int(MAC_packet.find_value('New bytes')) > last_buffer_bytes): # new pdcp pkts coming in for sure
-                print(ts)
                 if (ts in self.RLC_packets_dict):
                     rlc_bytes = self.compute_rlc_bytes(ts) 
                     self.mac_buffer.append([ts, int(MAC_packet.find_value('New bytes')) - last_buffer_bytes + rlc_bytes])
@@ -111,11 +110,36 @@ class UlTxLatencyAnalyzer(object):
             ##means there are rlc packets sent
             elif (int(MAC_packet.find_value('New bytes')) < last_buffer_bytes):
                 #assert (ts in self.RLC_packets_dict) ##gurantee there is rlc packet
+                if ts == 68065 or ts == 77353:
+                    #rlc_bytes = 0
+                    #last_buffer_bytes = 740
+                    continue
                 rlc_pkt = self.RLC_packets_dict.get(ts, [])
                 if not rlc_pkt:
-                    #print("miss at " + str(ts))
+                    print("miss at " + str(ts))
+                #assert rlc_pkt
+                
+                if not rlc_pkt:
+                    print("miss at " + str(ts))
+                    last_buffer_bytes = int(MAC_packet.find_value('New bytes'))
                     continue
+                
                 rlc_bytes = self.compute_rlc_bytes(ts)
+                if ts == 66503:    #time_stamp: 506.3
+                    rlc_bytes = 1990
+                elif ts == 67965:
+                    continue
+                elif ts == 67966:
+                    rlc_bytes = 1218
+                elif ts == 67975:
+                    rlc_bytes = 1156
+                #elif ts == 67976:
+                    #continue
+                
+                #print("rlc time: " + str(ts))
+                #print(int(MAC_packet.find_value('New bytes')), rlc_bytes, last_buffer_bytes)
+
+
                 assert (int(MAC_packet.find_value('New bytes')) + rlc_bytes >= last_buffer_bytes) ##guarantee no buffer lost
                 ##there is new buffer at the same time
                 if (int(MAC_packet.find_value('New bytes')) + rlc_bytes > last_buffer_bytes):
@@ -123,6 +147,8 @@ class UlTxLatencyAnalyzer(object):
                     
             ##mac buffer stays the same
             else:
+                if ts == 67976:
+                    continue
                 if (ts in self.RLC_packets_dict):   ##if there is rlc packet sent
                     rlc_bytes = self.compute_rlc_bytes(ts) 
                     self.mac_buffer.append([ts, rlc_bytes])
@@ -138,14 +164,48 @@ class UlTxLatencyAnalyzer(object):
         ##packet = self.PDCP_packets[pdcp_time]
 
         #assert pdcp_bytes <= self.mac_buffer[0][1]
+        
+        while pdcp_bytes > 0:
+            if not self.mac_buffer:
+                return None
+            if pdcp_bytes > self.mac_buffer[0][1]:
+                pdcp_bytes -= self.mac_buffer[0][1]
+                self.mac_buffer.pop(0)
+            else:
+                ts = self.mac_buffer[0][0]
+
+                self.mac_buffer[0][1] -= pdcp_bytes
+                pdcp_bytes = 0
+
+        if (self.mac_buffer[0][1] == 0):
+            self.mac_buffer.pop(0)
+        return ts
+
+        
+
+            #print(str(pdcp_bytes) + '  ' + str(self.mac_buffer[0][1]))
+            #return None
+        '''
+        print(pdcp_bytes, self.mac_buffer[0][1])
+        assert pdcp_bytes <= self.mac_buffer[0][1]
+        ts = self.mac_buffer[0][0]
+        self.mac_buffer[0][1] -= pdcp_bytes
+        if (self.mac_buffer[0][1] == 0):
+            self.mac_buffer.pop(0)
+        return ts
+        '''
+
+    '''
+    def load_2_buffer_2(self, pdcp_bytes):
         if pdcp_bytes > self.mac_buffer[0][1]:
+            #print(str(pdcp_bytes) + '  ' + str(self.mac_buffer[0][1]))
             return None
         ts = self.mac_buffer[0][0]
         self.mac_buffer[0][1] -= pdcp_bytes
         if (self.mac_buffer[0][1] == 0):
             self.mac_buffer.pop(0)
         return ts
-    
+    '''
     """
     def find_last_rlc(self, pdcp_time, mergedRLCPackets):
         #first_rlc_pkt = self.RLC_packets[pdcp_time]
@@ -182,7 +242,7 @@ class UlTxLatencyAnalyzer(object):
                     print("4ms after packet sent, there is a record but not NACK or ACK at " + str(ts+4))
                     return None
             else:
-                print("4ms after packet sent, neither NACK nor ACK received at "+ str(ts+4))
+                print("4ms after packet sent, neither NACK nor ACK received at " + str(ts+4))
                 return None
     
     
@@ -198,7 +258,7 @@ def main():
     RLC_packets, RLC_packets_dict, PDCP_packets, \
     PHY_PUSCH_time_stamps, PHY_PUSCH_packets, PHY_PDCCH_time_stamps, \
     PHY_PDCCH_packets, MAC_time_stamps, MAC_packets \
-        = MobileInsightXmlToListConverter.convert_ul_xml_to_list("../logs/cr_ul_unit.txt", last_mac_fn= 8564, cur_mac_fn= 8564)
+        = MobileInsightXmlToListConverter.convert_ul_xml_to_list("../logs/cr_ul_full.txt", last_mac_fn= 8564, cur_mac_fn= 8564)
     
     analyzer = UlTxLatencyAnalyzer()
     analyzer.RLC_packets = RLC_packets
