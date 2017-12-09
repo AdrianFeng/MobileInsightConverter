@@ -14,6 +14,10 @@
 .idea/**/sqlDataSources.xml
 .idea/**/dynamic.xml
 .idea/**/uiDesigner.xml
+.idea/MobileInsightConverter.iml
+.idea/misc.xml
+.idea/MobileInsightParser.iml
+
 
 # Gradle:
 .idea/**/gradle.xml
