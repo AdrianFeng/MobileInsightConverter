@@ -419,6 +419,45 @@ if __name__ == "__main__":
     RLC_packets, PHY_packets \
         = MobileInsightXmlToListConverter.convert_dl_xml_to_list("../logs/cr_dl_full.txt")
 
-    for packets in RLC_packets:
-        print("rg", packets.find_value("rb_cfg_idx"),"SN", packets.find_value("SN"), "time", packets.find_value("real_time"))
+    # for packets in RLC_packets:
+    #     print("rg", packets.find_value("rb_cfg_idx"),"SN", packets.find_value("SN"), "time", packets.find_value("real_time"))
+
+    PHY_dict = {}
+    for PHY_packet in PHY_packets:
+        PHY_dict.setdefault(PHY_packet.time_stamp, []).append(PHY_packet)
+
+    print("RLC size, PHY size, size diff")
+    split_list = [0]*10
+    for RLC_packet in RLC_packets:
+        PHY_list = PHY_dict.get(RLC_packet.time_stamp)
+
+        min_size_diff = float("inf")
+        target_PHY_packet = None
+        for PHY_packet in PHY_list:
+            current_diff = int(PHY_packet.find_value("TB Size")) - int(RLC_packet.find_value("pdu_bytes"))
+            if abs(current_diff) < min_size_diff:
+                target_PHY_packet = PHY_packet
+                min_size_diff = abs(current_diff)
+        if target_PHY_packet:
+            print( RLC_packet.find_value("pdu_bytes"), ",", target_PHY_packet.find_value("TB Size"), ",", min_size_diff)
+            # if min_size_diff < 20 :
+            #     number_below_20+=1
+            # else:
+            #     number_above_20+=1
+            count = 100
+            for i in range(len(split_list)):
+                if min_size_diff < count:
+                    split_list[i]+=1
+                    break
+                count+=100
+
+        else:
+            print("there is not match for RLC packet", RLC_packet.find_value("real_time"))
+
+    print(split_list)
+
+
+
+
+
 
