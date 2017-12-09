@@ -333,13 +333,13 @@ class MobileInsightXmlToListConverter(object):
                 for subpacket in subpackets:
                     datas = subpacket["RLCUL PDUs"]
                     for data in datas:
-                        if data["PDU TYPE"] == "RLCUL DATA" and data["rb_cfg_idx"] != "33":
+                        if data["PDU TYPE"] == "RLCUL DATA":
                             sys_fn = int(data["sys_fn"])
                             sub_fn = int(data["sub_fn"])
 
                             time_stamp = RLC_counter * 10240 + sys_fn * 10 + sub_fn
 
-                            if RLC_fn and RLC_fn > time_stamp:
+                            if RLC_fn and RLC_fn > (time_stamp + 900):
                                 RLC_counter += 1
                                 time_stamp += 10240
 
@@ -384,7 +384,14 @@ class MobileInsightXmlToListConverter(object):
                                 time_stamp = MAC_fn + 1
                                 MAC_fn = time_stamp
 
-                            current_packet = AtomPacket(sample["LCIDs"][3], time_stamp, "MAC")
+                            if int(sample["LCIDs"][0]["New bytes"]) > 0:
+                                current_packet = AtomPacket(sample["LCIDs"][0], time_stamp, "MAC")
+                            elif int(sample["LCIDs"][1]["New bytes"]) > 0:
+                                current_packet = AtomPacket(sample["LCIDs"][1], time_stamp, "MAC")
+                            elif int(sample["LCIDs"][2]["New bytes"]) > 0:
+                                current_packet = AtomPacket(sample["LCIDs"][2], time_stamp, "MAC")
+                            else:
+                                current_packet = AtomPacket(sample["LCIDs"][3], time_stamp, "MAC")
 
                             #current_list = MAC_packets.get(time_stamp, [])
                             #current_list.append(current_packet)
