@@ -106,7 +106,6 @@ class DlTxDelayAnalyzer(object):
                 self.totalPackets += 1
                 print(PHY_ts, ",", t_start, "," ,t_end, ",", t_end - PHY_ts, ", RLC_real_time", RLC_real_time,  ", PHY_real_time", PHY_real_time)
         print(self.totalPackets, self.txdelay)
-        print("********CDF count summary********")
 
         #
         # for t_start, t_end, idx in self.mergedRLCPackets:
