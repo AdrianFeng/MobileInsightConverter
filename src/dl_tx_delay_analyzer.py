@@ -7,6 +7,8 @@ from functools import reduce
 from typing import List
 
 
+# mergeTwoRLCEnd() and mergeTwoRLCStart() are not used in this analyzer,
+# they are used for uplink only
 def mergeTwoRLCEnd(processed, nextRLC) -> List:
     # merge 2 RLC packet, input to reduce()
     n = nextRLC.find_value("LI") + 1 - int(nextRLC.find_value("FI")[1])  # number of complete PDCP packets
@@ -27,7 +29,6 @@ def mergeTwoRLCStart(processed, nextRLC) -> List:
         return processed + [nextRLC.time_stamp] * n
 
 
-
 def checkRLC(RLC_packets):
     for i in range(0, len(RLC_packets)-1):
         print(RLC_packets[i].find_value('real_time'), RLC_packets[i+1].find_value('real_time'),
@@ -44,7 +45,6 @@ def mergeRLC(RLC_packets):
 
 
 def mergeRLC2(RLC_packets):
-
     mergedRLC = []
     start, end, startIdx = None, None, None
     for idx, r in enumerate(RLC_packets):
@@ -96,32 +96,22 @@ class DlTxDelayAnalyzer(object):
 
     def analyze(self):
 
-        CDF_count_dict = {}
         for t_start, t_end, idx in self.mergedRLCPackets:
             PHY_ts, RLC_real_time, PHY_real_time = self.RLC2PHY.get(idx,( None, None, None))
             if not PHY_ts:
                 print("Can't find PHY for RLC at (%d, %d)" % (t_start, t_end))
             else:
-                self.txdelay += t_end - PHY_ts
+                self.txdelay += t_end - PHY_ts + 1
                 self.totalPackets += 1
-                print(PHY_ts, ",", t_start, "," ,t_end, ",", t_end - PHY_ts, ", RLC_real_time", RLC_real_time,  ", PHY_real_time", PHY_real_time)
+                print(PHY_ts, ",", t_start, "," ,t_end, ",", t_end - PHY_ts + 1, ", RLC_real_time", RLC_real_time,  ", PHY_real_time", PHY_real_time)
         print(self.totalPackets, self.txdelay)
-
-        #
-        # for t_start, t_end, idx in self.mergedRLCPackets:
-        #      PHY_ts, RLC_real_time, PHY_real_time= self.RLC2PHY.get(idx, None)
-        #     if PHY_ts:
-
-
-
 
 
     def first_PHY_of_RLC(self, RLC_time_stamp):
 
         i = 0
-        while self.PHY_packets[i].time_stamp > RLC_time_stamp:
+        while self.PHY_packets[i].time_stamp > RLC_time_stamp:  # exception case: lots of PHY packets but no RLC found
             i += 1
-
 
         if self.PHY_packets[i].find_value('Did Recombining') == 'No':
             return self.PHY_packets.pop(i)
@@ -145,23 +135,15 @@ class DlTxDelayAnalyzer(object):
         return None
 
 
-
-
 def main():
     RLC_packets, PHY_packets \
         = MobileInsightXmlToListConverter.convert_dl_xml_to_list("../logs/cr_dl_full.txt")
-
 
     RLC_index_PHY_time_dict = {}
 
     analyzer = DlTxDelayAnalyzer()
     analyzer.PHY_packets = PHY_packets
     for index, RLC_packet in enumerate(RLC_packets):
-
-        # if RLC_packet.time_stamp == 202789:
-        #     print(" asdasdsa ", index , len(RLC_packets))
-        #
-        # print(RLC_packet.find_value("real_time"), RLC_packet.find_value("SN"), RLC_packet.time_stamp)
 
         PHY_packet = analyzer.first_PHY_of_RLC(RLC_packet.time_stamp)
         if PHY_packet:
@@ -173,22 +155,12 @@ def main():
 
     # for p in PHY_packets:
     #     print(p.time_stamp)
-    #
-    # for p in PHY_packets:
-    #     print(p.time_stamp)
-    #
 
     # for t in RLC_packets:
     #     print(t.time_stamp, t.find_value('SN'))
 
     checkRLC(RLC_packets)
     rlc = mergeRLC2(RLC_packets)
-    #
-    for i, r in enumerate(rlc):
-        if r[0] > 11050:
-            break
-        else:
-            print(i, r)
 
     analyzer = DlTxDelayAnalyzer()
     analyzer.RLC2PHY = RLC_index_PHY_time_dict
