@@ -1,0 +1,145 @@
+<data>
+<dm_log_packet>
+   <pair key="log_msg_len">96</pair>
+   <pair key="type_id">LTE_PHY_PDSCH_Stat_Indication</pair>
+   <pair key="timestamp">2017-12-10 06:02:44.945020</pair>
+   <pair key="Version">16</pair>
+   <pair key="Num Records">4</pair>
+   <pair key="Records" type="list">
+      <list>
+         <item type="dict">
+            <dict>
+               <pair key="Subframe Num">6</pair>
+               <pair key="Frame Num">978</pair>
+               <pair key="Num RBs">3</pair>
+               <pair key="Num Layers">1</pair>
+               <pair key="Num Transport Blocks Present">1</pair>
+               <pair key="Serving Cell Index">PCell</pair>
+               <pair key="HSIC Enabled">Disabled</pair>
+               <pair key="Transport Blocks" type="list">
+                  <list>
+                     <item type="dict">
+                        <dict>
+                           <pair key="HARQ ID">4</pair>
+                           <pair key="RV">0</pair>
+                           <pair key="NDI">0</pair>
+                           <pair key="CRC Result">Pass</pair>
+                           <pair key="RNTI Type">C-RNTI</pair>
+                           <pair key="TB Index">0</pair>
+                           <pair key="Discarded reTx Present">None</pair>
+                           <pair key="Did Recombining">No</pair>
+                           <pair key="TB Size">60</pair>
+                           <pair key="MCS">9</pair>
+                           <pair key="Num RBs">3</pair>
+                           <pair key="ACK/NACK Decision">ACK</pair>
+                        </dict>
+                     </item>
+                  </list>
+               </pair>
+               <pair key="PMCH ID">0</pair>
+               <pair key="Area ID">0</pair>
+            </dict>
+         </item>
+         <item type="dict">
+            <dict>
+               <pair key="Subframe Num">6</pair>
+               <pair key="Frame Num">983</pair>
+               <pair key="Num RBs">17</pair>
+               <pair key="Num Layers">1</pair>
+               <pair key="Num Transport Blocks Present">1</pair>
+               <pair key="Serving Cell Index">PCell</pair>
+               <pair key="HSIC Enabled">Disabled</pair>
+               <pair key="Transport Blocks" type="list">
+                  <list>
+                     <item type="dict">
+                        <dict>
+                           <pair key="HARQ ID">5</pair>
+                           <pair key="RV">0</pair>
+                           <pair key="NDI">0</pair>
+                           <pair key="CRC Result">Pass</pair>
+                           <pair key="RNTI Type">C-RNTI</pair>
+                           <pair key="TB Index">0</pair>
+                           <pair key="Discarded reTx Present">None</pair>
+                           <pair key="Did Recombining">No</pair>
+                           <pair key="TB Size">60</pair>
+                           <pair key="MCS">0</pair>
+                           <pair key="Num RBs">17</pair>
+                           <pair key="ACK/NACK Decision">ACK</pair>
+                        </dict>
+                     </item>
+                  </list>
+               </pair>
+               <pair key="PMCH ID">0</pair>
+               <pair key="Area ID">0</pair>
+            </dict>
+         </item>
+         <item type="dict">
+            <dict>
+               <pair key="Subframe Num">6</pair>
+               <pair key="Frame Num">987</pair>
+               <pair key="Num RBs">17</pair>
+               <pair key="Num Layers">1</pair>
+               <pair key="Num Transport Blocks Present">1</pair>
+               <pair key="Serving Cell Index">PCell</pair>
+               <pair key="HSIC Enabled">Disabled</pair>
+               <pair key="Transport Blocks" type="list">
+                  <list>
+                     <item type="dict">
+                        <dict>
+                           <pair key="HARQ ID">6</pair>
+                           <pair key="RV">0</pair>
+                           <pair key="NDI">0</pair>
+                           <pair key="CRC Result">Pass</pair>
+                           <pair key="RNTI Type">C-RNTI</pair>
+                           <pair key="TB Index">0</pair>
+                           <pair key="Discarded reTx Present">None</pair>
+                           <pair key="Did Recombining">No</pair>
+                           <pair key="TB Size">60</pair>
+                           <pair key="MCS">0</pair>
+                           <pair key="Num RBs">17</pair>
+                           <pair key="ACK/NACK Decision">ACK</pair>
+                        </dict>
+                     </item>
+                  </list>
+               </pair>
+               <pair key="PMCH ID">0</pair>
+               <pair key="Area ID">0</pair>
+            </dict>
+         </item>
+         <item type="dict">
+            <dict>
+               <pair key="Subframe Num">4</pair>
+               <pair key="Frame Num">1006</pair>
+               <pair key="Num RBs">17</pair>
+               <pair key="Num Layers">1</pair>
+               <pair key="Num Transport Blocks Present">1</pair>
+               <pair key="Serving Cell Index">PCell</pair>
+               <pair key="HSIC Enabled">Disabled</pair>
+               <pair key="Transport Blocks" type="list">
+                  <list>
+                     <item type="dict">
+                        <dict>
+                           <pair key="HARQ ID">7</pair>
+                           <pair key="RV">0</pair>
+                           <pair key="NDI">0</pair>
+                           <pair key="CRC Result">Pass</pair>
+                           <pair key="RNTI Type">C-RNTI</pair>
+                           <pair key="TB Index">0</pair>
+                           <pair key="Discarded reTx Present">None</pair>
+                           <pair key="Did Recombining">No</pair>
+                           <pair key="TB Size">60</pair>
+                           <pair key="MCS">0</pair>
+                           <pair key="Num RBs">17</pair>
+                           <pair key="ACK/NACK Decision">ACK</pair>
+                        </dict>
+                     </item>
+                  </list>
+               </pair>
+               <pair key="PMCH ID">0</pair>
+               <pair key="Area ID">0</pair>
+            </dict>
+         </item>
+      </list>
+   </pair>
+</dm_log_packet>
+</data>
