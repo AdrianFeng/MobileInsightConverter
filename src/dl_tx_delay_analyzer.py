@@ -1,9 +1,10 @@
 #!/usr/bin/env python3
 # author: Jiuru Shao
 
-import os
-from src.log_parser import MobileInsightXmlToListConverter
+import sys
+
 from functools import reduce
+from log_parser import MobileInsightXmlToListConverter
 from typing import List
 
 
@@ -136,8 +137,11 @@ class DlTxDelayAnalyzer(object):
 
 
 def main():
+
+    file_path = sys.argv[1]
+
     RLC_packets, PHY_packets \
-        = MobileInsightXmlToListConverter.convert_dl_xml_to_list("../logs/cr_dl_full.txt")
+        = MobileInsightXmlToListConverter.convert_dl_xml_to_list(file_path)
 
     RLC_index_PHY_time_dict = {}
 

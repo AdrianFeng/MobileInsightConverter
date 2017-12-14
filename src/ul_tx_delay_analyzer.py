@@ -1,12 +1,10 @@
 #!/usr/bin/env python3
 # Author: Zhonglin Zhang, Zhengxu Xia
 
-import os
-from log_parser import MobileInsightXmlToListConverter
-import functools
-from typing import List
+import csv, sys
+
 from dl_tx_delay_analyzer import mergeRLC
-import csv
+from log_parser import MobileInsightXmlToListConverter
 
 
 class UlTxLatencyAnalyzer(object):
@@ -61,7 +59,7 @@ class UlTxLatencyAnalyzer(object):
         print(len(start_timestamps))
         mergedRLCPackets = list(mergeRLC(self.RLC_packets))
 
-        ##export the delay data into a csv file
+        # export the delay data into a csv file
         with open('ul_full_delay.csv', 'w') as csvfile:
             dataWriter = csv.writer(csvfile, delimiter=',')
             dataWriter.writerow(['Total Delay', 'Mac Delay', 'Tx Delay'])
@@ -200,8 +198,6 @@ class UlTxLatencyAnalyzer(object):
             self.mac_buffer.pop(0)
         return ts
 
-        
-        
     def find_last_pusch(self, last_rlc_time):
         # timestamp = last_rlc_time
         # while PUSCH pkt exists at last_rlc_time:
@@ -247,10 +243,12 @@ class UlTxLatencyAnalyzer(object):
 
 
 def main():
+
+    file_path = sys.argv[1]
     RLC_packets, RLC_packets_dict, PDCP_packets, \
     PHY_PUSCH_time_stamps, PHY_PUSCH_packets, PHY_PDCCH_time_stamps, \
     PHY_PDCCH_packets, MAC_time_stamps, MAC_packets \
-        = MobileInsightXmlToListConverter.convert_ul_xml_to_list("../logs/cr_ul_full.txt", last_mac_fn= 8564, cur_mac_fn= 8564)
+        = MobileInsightXmlToListConverter.convert_ul_xml_to_list(ul_xml_file=file_path, last_mac_fn=8564, cur_mac_fn=8564)
     
     analyzer = UlTxLatencyAnalyzer()
     analyzer.RLC_packets = RLC_packets

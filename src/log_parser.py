@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 # Author: Zhen Feng
 
+import sys
 import xml.etree.ElementTree as ET
 
 
@@ -451,9 +452,13 @@ class MobileInsightXmlToListConverter(object):
 
 
 if __name__ == "__main__":
-    RLC_packets, PHY_packets \
-        = MobileInsightXmlToListConverter.convert_dl_xml_to_list("../logs/cr5.txt")
 
+    file_path = sys.argv[1]
+
+    RLC_packets, PHY_packets \
+        = MobileInsightXmlToListConverter.convert_dl_xml_to_list(dl_xml_file=file_path)
+
+    # for test purposes
     for packet in RLC_packets:
         print(packet.time_stamp, packet.find_value("SN"))
 

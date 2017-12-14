@@ -7,6 +7,7 @@
 .idea/dictionaries
 
 # Sensitive or high-churn files:
+.idea/
 .idea/**/dataSources/
 .idea/**/dataSources.ids
 .idea/**/dataSources.xml
@@ -54,3 +55,9 @@ fabric.properties
 
 # DS-store file
 .DS_Store
+
+# cache file
+__pycache__
+
+# csv file
+*.csv
