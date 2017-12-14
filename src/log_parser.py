@@ -1,6 +1,7 @@
-# from collections import OrderedDict
-import xml.etree.ElementTree as ET
+#!/usr/bin/env python3
 # Author: Zhen Feng
+
+import xml.etree.ElementTree as ET
 
 
 class AtomPacket(object):
@@ -440,13 +441,12 @@ class MobileInsightXmlToListConverter(object):
         MAC_time_stamps = list(MAC_packets.keys())
         PHY_PDCCH_time_stamps = list(PHY_PDCCH_packets.keys())
 
-
         PHY_PDCCH_time_stamps.sort(reverse=True)
         MAC_time_stamps.sort(reverse=False)
         PHY_PUSCH_time_stamps.sort(reverse=True)
 
         return RLC_packets, RLC_packets_dict, PDCP_packets, \
-               PHY_PUSCH_time_stamps, PHY_PUSCH_packets, PHY_PDCCH_time_stamps, \
+               PHY_PUSCH_time_stamps, PHY_PUSCH_packets, PHY_PDCCH_time_stamps,\
                PHY_PDCCH_packets, MAC_time_stamps, MAC_packets
 
 
